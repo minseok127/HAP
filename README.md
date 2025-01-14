@@ -8,6 +8,9 @@ Hidden attributes are encoded attributes of ancestor tables (dimension tables) i
 
 Attributes are encoded using dictionary encoding and bit-packing. The dictionary is created as a PostgreSQL-style table during the encoding process for the dimension table, with the attribute values of the dimension table becoming entries in the dictionary. These entries are then stored as hidden attributes in a variable-length byte array, where the dictionary's entry IDs are bit-packed for efficient storage.
 
+```
+```
+
 # Encoding
 
 Encoding is performed by calling the built-in function *locator_hap_encode*. The example below represents encoding the r_name attribute of the region table in the public namespace. Each piece of information is separated by a dot (.).
