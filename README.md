@@ -78,4 +78,6 @@ This query performs three operations. First, it identifies the distinct values o
 
 # Foriegn key check
 
+# Predicate pushdown
+
 # Partition map
