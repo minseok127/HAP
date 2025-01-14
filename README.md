@@ -1,10 +1,14 @@
-This README does not provide an overview of the LOCATOR project but focuses on the implementation details. The first part is hidden attribute, implemented in the src/backend/locator/hap. The second part is processing columnar slot, implemented in the src/backend/locator/executor and existing PostgreSQL functions with #ifdef LOCATOR. The third part is catalog management for the LOCATOR project (PostgreSQL-style catalogs, not the ex-catalog mentioned in the paper). This README describes hidden attribute and columnar slot and explains the required catalogs when necessary.
+This repository extracts the implementation of hidden attributes from the [LOCATOR](https://github.com/snu-dbxlab/LOCATOR) project into a separate module called HAP. The module is located in src/backend/hap, and modifications to existing PostgreSQL functions are marked with the HAP_HOOK keyword and #ifdef HAP.
+
+This README explains implementation details of HAP. It is divided into four main categories: the creation and encoding of HAP tables, retrieving encoded values during the insert process via foreign key checks, the process of pushing down predicates on ancestor tables to hidden attributes in child tables, and the techniques used in the [LOCATOR](https://github.com/snu-dbxlab/LOCATOR) project to find partitions matching the predicates.
 
 # Hidden attribute
 
 Hidden attributes are encoded attributes of ancestor tables (dimension tables) in a foreign key relationship. When a new tuple is inserted into the child table it receives the encoded values from its parent tuples through a foreign key check and appends them at the end of the child tuple. Parent tuples themselves may have obtained encoded values from their own parent tuples. So the child don't have to perform joins across all ancestor tables to retrieve these values.
 
 Attributes are encoded using dictionary encoding and bit-packing. The dictionary is created as a PostgreSQL-style table during the encoding process for the dimension table, with the attribute values of the dimension table becoming entries in the dictionary. These entries are then stored as hidden attributes in a variable-length byte array, where the dictionary's entry IDs are bit-packed for efficient storage.
+
+# Encoding
 
 Encoding is performed by calling the built-in function *locator_hap_encode*. The example below represents encoding the r_name attribute of the region table in the public namespace. Each piece of information is separated by a dot (.).
 ```
@@ -68,3 +72,7 @@ This built-in function internally executes the following query.
  */
 ```
 This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function *hap_build_hidden_attribute_desc* to update the catalog. Finally, it calls the built-in function *hap_encode_to_hidden_attribute* to add the encoded values into the hidden attribute.
+
+# Foriegn key check
+
+# Partition map
