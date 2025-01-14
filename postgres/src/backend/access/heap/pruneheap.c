@@ -28,10 +28,6 @@
 #include "utils/rel.h"
 #include "utils/snapmgr.h"
 
-#ifdef DIVA
-#include "storage/pleaf.h"
-#endif
-
 /* Working data for heap_page_prune and subroutines */
 typedef struct
 {
@@ -80,13 +76,6 @@ typedef struct
 	 */
 	int8		htsv[MaxHeapTuplesPerPage + 1];
 } PruneState;
-
-/* Local functions */
-#ifdef DIVA 
-static int  heap_prune_siro(Buffer buffer,
-							OffsetNumber rootoffnum,
-							PruneState *prstate);
-#endif
 
 static HTSV_Result heap_prune_satisfies_vacuum(PruneState *prstate,
 											   HeapTuple tup,
@@ -169,9 +158,6 @@ heap_page_prune_opt(Relation relation, Buffer buffer)
 	 */
 	vistest = GlobalVisTestFor(relation);
 
-#ifdef DIVA
-	/* Keep on through the below code to mark the hint bits of tuples */
-#else
 	if (!GlobalVisTestIsRemovableXid(vistest, prune_xid))
 	{
 		if (!OldSnapshotThresholdActive())
@@ -185,7 +171,6 @@ heap_page_prune_opt(Relation relation, Buffer buffer)
 		if (!TransactionIdPrecedes(prune_xid, limited_xmin))
 			return;
 	}
-#endif
 
 	/*
 	 * We prune when a previous UPDATE failed to find enough space on the page
@@ -349,14 +334,6 @@ heap_page_prune(Relation relation, Buffer buffer,
 			prstate.htsv[offnum] = -1;
 			continue;
 		}
-	
-#ifdef DIVA
-		if (IsSiro(relation) && LP_IS_PLEAF_FLAG(itemid))
-		{
-			// pleaf pointer rec need to be skipped.
-			continue;
-		}
-#endif
 
 		htup = (HeapTupleHeader) PageGetItem(page, itemid);
 		tup.t_data = htup;
@@ -375,34 +352,27 @@ heap_page_prune(Relation relation, Buffer buffer,
 	}
 
 	/* Scan the page */
-#ifdef DIVA
-	if (!IsSiro(relation))
+	for (offnum = FirstOffsetNumber;
+		 offnum <= maxoff;
+		 offnum = OffsetNumberNext(offnum))
 	{
-#endif /* DIVA */
-		for (offnum = FirstOffsetNumber;
-			 offnum <= maxoff;
-			 offnum = OffsetNumberNext(offnum))
-		{
-			ItemId		itemid;
+		ItemId		itemid;
 
-			/* Ignore items already processed as part of an earlier chain */
-			if (prstate.marked[offnum])
-				continue;
+		/* Ignore items already processed as part of an earlier chain */
+		if (prstate.marked[offnum])
+			continue;
 
-			/* see preceding loop */
-			if (off_loc)
-				*off_loc = offnum;
+		/* see preceding loop */
+		if (off_loc)
+			*off_loc = offnum;
 
-			/* Nothing to do if slot is empty or already dead */
-			itemid = PageGetItemId(page, offnum);
-			if (!ItemIdIsUsed(itemid) || ItemIdIsDead(itemid))
-				continue;
+		/* Nothing to do if slot is empty or already dead */
+		itemid = PageGetItemId(page, offnum);
+		if (!ItemIdIsUsed(itemid) || ItemIdIsDead(itemid))
+			continue;
 
-			ndeleted += heap_prune_chain(buffer, offnum, &prstate);
-		}
-#ifdef DIVA
+		ndeleted += heap_prune_chain(buffer, offnum, &prstate);
 	}
-#endif /* DIVA */
 
 	/* Clear the offset information once we have processed the given page. */
 	if (off_loc)
@@ -585,83 +555,6 @@ heap_prune_satisfies_vacuum(PruneState *prstate, HeapTuple tup, Buffer buffer)
 	return res;
 }
 
-#ifdef DIVA 
-/*
- * Prune specified line pointer.
- *
- * If the item is an index-referenced tuple (i.e. leftside of siro),
- * leftside & rightside tuples of siro is pruned by marking flags of
- * linepointers as LP_DEAD.
- *
- * OldestXmin is the cutoff XID used to identify dead or recent dead tuples.
- * It is needed for HeapTupleSatisfiesVacuum().
- *
- * Returns the number of tuples (to be) deleted from the page.
- * TODO: Returned number is meeningless yet.
- */
-static int
-heap_prune_siro(Buffer buffer, OffsetNumber offnum, PruneState *prstate)
-{
-	int         ndeleted = 0;
-	Page        dp = (Page) BufferGetPage(buffer);
-
-	ItemId		lp;
-	HeapTupleHeader htup;
-	HeapTupleData   tup;
-
-	Relation relation = prstate->rel;
-	TransactionId OldestXmin = prstate->old_snap_xmin;
-	
-	tup.t_tableOid = RelationGetRelid(relation);
-
-	lp = PageGetItemId(dp, offnum);
-
-	if (!ItemIdIsNormal(lp))
-	{
-		return ndeleted;
-	}
-
-	if (LP_IS_PLEAF_FLAG(lp)) // is left siro?
-	{
-		return ndeleted;
-	}
-
-	if (LP_OVR_IS_USING(lp))
-	{
-		htup = (HeapTupleHeader) PageGetItem(dp, lp);
-
-		tup.t_data = htup;
-		tup.t_len = ItemIdGetLength(lp);
-		ItemPointerSet(&(tup.t_self), BufferGetBlockNumber(buffer), offnum);
-
-		switch (heap_prune_satisfies_vacuum(prstate, &tup, buffer))
-		{
-			case HEAPTUPLE_DEAD:
-			case HEAPTUPLE_RECENTLY_DEAD:
-				/*
-				 * These cases means that the transaction who has deleted
-				 * this tuple has committed, but we don't know whether this is
-				 * visible or not yet.
-				 */
-				break;
-
-			case HEAPTUPLE_DELETE_IN_PROGRESS:
-			case HEAPTUPLE_LIVE:
-			case HEAPTUPLE_INSERT_IN_PROGRESS:
-				/* This tuple is not deleted. */
-				return ndeleted;
-				break;
-
-			default:
-				elog(ERROR, "@@ unexpected HeapTupleSatisfiesVacuum result");
-				return ndeleted;
-				break;
-		}
-	}
-
-	return ndeleted;
-}
-#endif
 /*
  * Prune specified line pointer or a HOT chain originating at line pointer.
  *

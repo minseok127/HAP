@@ -4200,24 +4200,6 @@ LockBuffer(Buffer buffer, int mode)
 		elog(ERROR, "unrecognized buffer lock mode: %d", mode);
 }
 
-#ifdef DIVA
-/*
- * See heap_update_with_vc()
- */
-void*
-GetBufferLock(Buffer buffer)
-{
-	BufferDesc *buf;
-
-	Assert(BufferIsValid(buffer));
-	if (BufferIsLocal(buffer))
-		Assert(false);
-
-	buf = GetBufferDescriptor(buffer - 1);
-	return BufferDescriptorGetContentLock(buf);
-}
-
-#endif
 /*
  * Acquire the content_lock for the buffer, but only if we don't have to wait.
  *

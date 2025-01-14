@@ -34,17 +34,6 @@
 #define FirstNormalTransactionId	((TransactionId) 3)
 #define MaxTransactionId			((TransactionId) 0xFFFFFFFF)
 
-#ifdef DIVA
-/* ----------------
- *    max transaction id for checking oldest xid
- * 
- * The most significant bit should be 0. There is difference check
- * with subtraction. If we do not consider msb, we get overflow error. :( 
- * ----------------
- */
-#define MyMaxTransactionId		((TransactionId) 0x7FFFFFFF) 
-#endif
-
 /* ----------------
  *		transaction ID manipulation macros
  * ----------------

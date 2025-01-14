@@ -26,6 +26,5 @@ OBJS = \
 	startup.o \
 	syslogger.o \
 	walwriter.o \
-	ebi_tree_process.o
 
 include $(top_srcdir)/src/backend/common.mk

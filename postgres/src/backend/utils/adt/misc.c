@@ -44,10 +44,6 @@
 #include "utils/lsyscache.h"
 #include "utils/ruleutils.h"
 #include "utils/timestamp.h"
-#ifdef DIVA
-#include "storage/ebi_tree.h"
-#include "postmaster/ebi_tree_process.h"
-#endif /* DIVA */
 
 /*
  * Common subroutine for num_nulls() and num_nonnulls().
@@ -952,28 +948,4 @@ pg_get_replica_identity_index(PG_FUNCTION_ARGS)
 	else
 		PG_RETURN_NULL();
 }
-#ifdef DIVA
-Datum
-ebi_tree_print(PG_FUNCTION_ARGS)
-{
-    char string[16384];
-	char tmp[1024];
 
-	EbiPrintTree(EbiTreeShmem->ebitree);
-
-	string[0] = '\0';
-
-    PG_RETURN_NULL();
-}
-#else
-Datum
-ebi_tree_print(PG_FUNCTION_ARGS)
-{
-    char string[16384];
-	char tmp[1024];
-
-	string[0] = '\0';
-
-    PG_RETURN_NULL();
-}
-#endif /* DIVA */

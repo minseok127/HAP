@@ -139,11 +139,6 @@
 #include "storage/spin.h"
 #endif
 
-#ifdef DIVA
-#include "storage/ebi_tree.h"
-#include "postmaster/ebi_tree_process.h"
-#endif
-
 /*
  * Possible types of a backend. Beyond being the possible bkend_type values in
  * struct bkend, these are OR-able request flag bits for SignalSomeChildren()
@@ -256,10 +251,6 @@ static pid_t StartupPID = 0,
 			BgWriterPID = 0,
 			CheckpointerPID = 0,
 			WalWriterPID = 0,
-#ifdef DIVA
-			EbiTreePID = 0,
-			PLeafMgrPID = 0,
-#endif
 			WalReceiverPID = 0,
 			AutoVacPID = 0,
 			PgArchPID = 0,
@@ -557,10 +548,6 @@ static void ShmemBackendArrayRemove(Backend *bn);
 #define StartBackgroundWriter() StartChildProcess(BgWriterProcess)
 #define StartCheckpointer()		StartChildProcess(CheckpointerProcess)
 #define StartWalWriter()		StartChildProcess(WalWriterProcess)
-#ifdef DIVA
-#define StartEbiTree()		StartChildProcess(EbiTreeProcess)
-#define StartPLeafManager()		StartChildProcess(PLeafManagerProcess)
-#endif
 #define StartWalReceiver()		StartChildProcess(WalReceiverProcess)
 
 /* Macros to check exit status of a child process */
@@ -1854,13 +1841,6 @@ ServerLoop(void)
 		if (WalWriterPID == 0 && pmState == PM_RUN)
 			WalWriterPID = StartWalWriter();
 
-#ifdef DIVA
-		if (EbiTreePID == 0 && pmState == PM_RUN)
-			EbiTreePID = StartEbiTree();
-
-		if (PLeafMgrPID == 0 && pmState == PM_RUN)
-			PLeafMgrPID = StartPLeafManager();
-#endif
 		/*
 		 * If we have lost the autovacuum launcher, try to start a new one. We
 		 * don't want autovacuum to run in binary upgrade mode because
@@ -2790,12 +2770,6 @@ SIGHUP_handler(SIGNAL_ARGS)
 			signal_child(CheckpointerPID, SIGHUP);
 		if (WalWriterPID != 0)
 			signal_child(WalWriterPID, SIGHUP);
-#ifdef DIVA
-		if (PLeafMgrPID != 0)
-			signal_child(PLeafMgrPID, SIGHUP);
-		if (EbiTreePID != 0)
-			signal_child(EbiTreePID, SIGHUP);
-#endif
 		if (WalReceiverPID != 0)
 			signal_child(WalReceiverPID, SIGHUP);
 		if (AutoVacPID != 0)
@@ -3118,13 +3092,6 @@ reaper(SIGNAL_ARGS)
 				BgWriterPID = StartBackgroundWriter();
 			if (WalWriterPID == 0)
 				WalWriterPID = StartWalWriter();
-#ifdef DIVA
-			if (EbiTreePID == 0)
-				EbiTreePID = StartEbiTree();
-
-			if (PLeafMgrPID == 0)
-				PLeafMgrPID = StartPLeafManager();
-#endif
 			/*
 			 * Likewise, start other special children as needed.  In a restart
 			 * situation, some of them may be alive already.
@@ -3226,35 +3193,6 @@ reaper(SIGNAL_ARGS)
 								 _("WAL writer process"));
 			continue;
 		}
-
-#ifdef DIVA
-		/*
-		 * Was it the EBI tree?  Normal exit can be ignored; we'll start a
-		 * new one at the next iteration of the postmaster's main loop, if
-		 * necessary.  Any other exit condition is treated as a crash.
-		 */
-		if (pid == EbiTreePID)
-		{
-			EbiTreePID = 0;
-			if (!EXIT_STATUS_0(exitstatus))
-				HandleChildCrash(pid, exitstatus,
-								 _("Ebi Tree process"));
-			continue;
-		}
-		/*
-		 * Was it the pleaf manager?  Normal exit can be ignored; we'll start a
-		 * new one at the next iteration of the postmaster's main loop, if
-		 * necessary.  Any other exit condition is treated as a crash.
-		 */
-		if (pid == PLeafMgrPID)
-		{
-			PLeafMgrPID = 0;
-			if (!EXIT_STATUS_0(exitstatus))
-				HandleChildCrash(pid, exitstatus,
-								 _("PLeaf Manager process"));
-			continue;
-		}
-#endif
 
 		/*
 		 * Was it the wal receiver?  If exit status is zero (normal) or one
@@ -3710,31 +3648,7 @@ HandleChildCrash(int pid, int exitstatus, const char *procname)
 								 (int) WalWriterPID)));
 		signal_child(WalWriterPID, (SendStop ? SIGSTOP : SIGQUIT));
 	}
-#ifdef DIVA
-	/* Take care of the ebi tree too */
-	if (pid == EbiTreePID)
-		EbiTreePID = 0;
-	else if (EbiTreePID != 0 && take_action)
-	{
-		ereport(DEBUG2,
-				(errmsg_internal("sending %s to process %d",
-								 (SendStop ? "SIGSTOP" : "SIGQUIT"),
-								 (int) EbiTreePID)));
-		signal_child(EbiTreePID, (SendStop ? SIGSTOP : SIGQUIT));
-	}
 
-	/* Take care of the pleaf manager too */
-	if (pid == PLeafMgrPID)
-		PLeafMgrPID = 0;
-	else if (PLeafMgrPID != 0 && take_action)
-	{
-		ereport(DEBUG2,
-				(errmsg_internal("sending %s to process %d",
-								 (SendStop ? "SIGSTOP" : "SIGQUIT"),
-								 (int) PLeafMgrPID)));
-		signal_child(PLeafMgrPID, (SendStop ? SIGSTOP : SIGQUIT));
-	}
-#endif
 	/* Take care of the walreceiver too */
 	if (pid == WalReceiverPID)
 		WalReceiverPID = 0;
@@ -3903,15 +3817,6 @@ PostmasterStateMachine(void)
 		/* and the walwriter too */
 		if (WalWriterPID != 0)
 			signal_child(WalWriterPID, SIGTERM);
-#ifdef DIVA
-		/* and the pleaf manager too */
-		if (PLeafMgrPID != 0)
-			signal_child(PLeafMgrPID, SIGTERM);
-
-		/* and the ebi tree too */
-		if (EbiTreePID != 0)
-			signal_child(EbiTreePID, SIGTERM);
-#endif
 		/* If we're in recovery, also stop startup and walreceiver procs */
 		if (StartupPID != 0)
 			signal_child(StartupPID, SIGTERM);
@@ -3947,10 +3852,6 @@ PostmasterStateMachine(void)
 			(CheckpointerPID == 0 ||
 			 (!FatalError && Shutdown < ImmediateShutdown)) &&
 			WalWriterPID == 0 &&
-#ifdef DIVA
-			EbiTreePID == 0 &&
-			PLeafMgrPID == 0 &&
-#endif
 			AutoVacPID == 0)
 		{
 			if (Shutdown >= ImmediateShutdown || FatalError)
@@ -4040,10 +3941,6 @@ PostmasterStateMachine(void)
 			Assert(BgWriterPID == 0);
 			Assert(CheckpointerPID == 0);
 			Assert(WalWriterPID == 0);
-#ifdef DIVA
-			Assert(EbiTreePID == 0);
-			Assert(PLeafMgrPID == 0);
-#endif
 			Assert(AutoVacPID == 0);
 			/* syslogger is not considered here */
 			pmState = PM_NO_CHILDREN;
@@ -4238,12 +4135,6 @@ TerminateChildren(int signal)
 		signal_child(CheckpointerPID, signal);
 	if (WalWriterPID != 0)
 		signal_child(WalWriterPID, signal);
-#ifdef DIVA
-	if (PLeafMgrPID != 0)
-		signal_child(PLeafMgrPID, signal);
-	if (EbiTreePID != 0)
-		signal_child(EbiTreePID, signal);
-#endif
 	if (WalReceiverPID != 0)
 		signal_child(WalReceiverPID, signal);
 	if (AutoVacPID != 0)
@@ -5566,17 +5457,6 @@ StartChildProcess(AuxProcType type)
 				ereport(LOG,
 						(errmsg("could not fork WAL writer process: %m")));
 				break;
-#ifdef DIVA
-			case EbiTreeProcess:
-				ereport(LOG,
-						(errmsg("could not fork EBI tree process: %m")));
-				break;
-
-			case PLeafManagerProcess:
-				ereport(LOG,
-						(errmsg("could not fork PLeaf Manager process: %m")));
-				break;
-#endif
 			case WalReceiverProcess:
 				ereport(LOG,
 						(errmsg("could not fork WAL receiver process: %m")));

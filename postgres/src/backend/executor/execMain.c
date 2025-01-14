@@ -1615,9 +1615,6 @@ ExecutePlan(EState *estate,
 	TupleTableSlot *slot;
 	uint64		current_tuple_count;
 
-#ifdef DIVA /* USEFUL BREAKPOINT */
-	curr_cmdtype = operation;
-#endif
 	/*
 	 * initialize local variables
 	 */

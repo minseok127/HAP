@@ -163,9 +163,6 @@ extern bool GlobalVisCheckRemovableFullXid(Relation rel, FullTransactionId fxid)
  * Utility functions for implementing visibility routines in table AMs.
  */
 extern bool XidInMVCCSnapshot(TransactionId xid, Snapshot snapshot);
-#ifdef DIVA
-extern bool XidInMVCCSnapshotForEBI(TransactionId xid, Snapshot snapshot);
-#endif /* DIVA */
 
 /* Support for catalog timetravel for logical decoding */
 struct HTAB;

@@ -290,11 +290,8 @@ GetTransactionSnapshot(void)
 			if (IsolationIsSerializable())
 				CurrentSnapshot = GetSerializableTransactionSnapshot(&CurrentSnapshotData);
 			else
-#ifdef DIVA
-				CurrentSnapshot = GetSnapshotData(&CurrentSnapshotData, true);
-#else
 				CurrentSnapshot = GetSnapshotData(&CurrentSnapshotData);
-#endif
+
 			/* Make a saved copy */
 			CurrentSnapshot = CopySnapshot(CurrentSnapshot);
 			FirstXactSnapshot = CurrentSnapshot;
@@ -303,11 +300,7 @@ GetTransactionSnapshot(void)
 			pairingheap_add(&RegisteredSnapshots, &FirstXactSnapshot->ph_node);
 		}
 		else
-#ifdef DIVA
-			CurrentSnapshot = GetSnapshotData(&CurrentSnapshotData, false);
-#else
 			CurrentSnapshot = GetSnapshotData(&CurrentSnapshotData);
-#endif
 
 		FirstSnapshotSet = true;
 		return CurrentSnapshot;
@@ -318,11 +311,7 @@ GetTransactionSnapshot(void)
 
 	/* Don't allow catalog snapshot to be older than xact snapshot. */
 	InvalidateCatalogSnapshot();
-#ifdef DIVA
-	CurrentSnapshot = GetSnapshotData(&CurrentSnapshotData, true);
-#else
 	CurrentSnapshot = GetSnapshotData(&CurrentSnapshotData);
-#endif
 
 	return CurrentSnapshot;
 }
@@ -353,11 +342,7 @@ GetLatestSnapshot(void)
 	if (!FirstSnapshotSet)
 		return GetTransactionSnapshot();
 
-#ifdef DIVA
-	SecondarySnapshot = GetSnapshotData(&SecondarySnapshotData, true);
-#else
 	SecondarySnapshot = GetSnapshotData(&SecondarySnapshotData);
-#endif
 
 	return SecondarySnapshot;
 }
@@ -437,11 +422,8 @@ GetNonHistoricCatalogSnapshot(Oid relid)
 	if (CatalogSnapshot == NULL)
 	{
 		/* Get new snapshot. */
-#ifdef DIVA
-		CatalogSnapshot = GetSnapshotData(&CatalogSnapshotData, false);
-#else
 		CatalogSnapshot = GetSnapshotData(&CatalogSnapshotData);
-#endif
+
 		/*
 		 * Make sure the catalog snapshot will be accounted for in decisions
 		 * about advancing PGPROC->xmin.  We could apply RegisterSnapshot, but
@@ -545,11 +527,8 @@ SetTransactionSnapshot(Snapshot sourcesnap, VirtualTransactionId *sourcevxid,
 	 * CurrentSnapshotData's XID arrays have been allocated, and (2) to update
 	 * the state for GlobalVis*.
 	 */
-#ifdef DIVA
-	CurrentSnapshot = GetSnapshotData(&CurrentSnapshotData, true);
-#else
 	CurrentSnapshot = GetSnapshotData(&CurrentSnapshotData);
-#endif
+
 	/*
 	 * Now copy appropriate fields from the source snapshot.
 	 */
@@ -2413,135 +2392,3 @@ XidInMVCCSnapshot(TransactionId xid, Snapshot snapshot)
 
 	return false;
 }
-
-#ifdef DIVA
-/*
- * XidInMVCCSnapshotForEBI
- *
- * Same functionality with XidInMVCCSnapshotForEBI, but rely on the
- * snapshot format created by CopySnapshot. It is meant to avoid internal
- * reference of SnapshotData such as xip, subxip.
- */
-bool
-XidInMVCCSnapshotForEBI(TransactionId xid, Snapshot snapshot)
-{
-	uint32		i;
-	TransactionId	*xip;
-	TransactionId	*subxip;
-	Size			subxipoff;
-	
-	/*
-	 * Calculate the offset of snapshot->xip, snapshot->subxip,
-     * since those values are virtual addresses of the snapshot owner
-	 */
-	xip = (TransactionId *) (snapshot + 1);
-	subxipoff = sizeof(SnapshotData) + snapshot->xcnt * sizeof(TransactionId);
-	subxip = (TransactionId *) ((char *) snapshot + subxipoff);
-
-	/*
-	 * Make a quick range check to eliminate most XIDs without looking at the
-	 * xip arrays.  Note that this is OK even if we convert a subxact XID to
-	 * its parent below, because a subxact with XID < xmin has surely also got
-	 * a parent with XID < xmin, while one with XID >= xmax must belong to a
-	 * parent that was not yet committed at the time of this snapshot.
-	 */
-
-	/* Any xid < xmin is not in-progress */
-	if (TransactionIdPrecedes(xid, snapshot->xmin))
-		return false;
-	/* Any xid >= xmax is in-progress */
-	if (TransactionIdFollowsOrEquals(xid, snapshot->xmax))
-		return true;
-
-	/*
-	 * Snapshot information is stored slightly differently in snapshots taken
-	 * during recovery.
-	 */
-	if (!snapshot->takenDuringRecovery)
-	{
-		/*
-		 * If the snapshot contains full subxact data, the fastest way to
-		 * check things is just to compare the given XID against both subxact
-		 * XIDs and top-level XIDs.  If the snapshot overflowed, we have to
-		 * use pg_subtrans to convert a subxact XID to its parent XID, but
-		 * then we need only look at top-level XIDs not subxacts.
-		 */
-		if (!snapshot->suboverflowed)
-		{
-			/* we have full data, so search subxip */
-			int32		j;
-
-			for (j = 0; j < snapshot->subxcnt; j++)
-			{
-				if (TransactionIdEquals(xid, subxip[j]))
-					return true;
-			}
-
-			/* not there, fall through to search xip[] */
-		}
-		else
-		{
-			/*
-			 * Snapshot overflowed, so convert xid to top-level.  This is safe
-			 * because we eliminated too-old XIDs above.
-			 */
-			xid = SubTransGetTopmostTransaction(xid);
-
-			/*
-			 * If xid was indeed a subxact, we might now have an xid < xmin,
-			 * so recheck to avoid an array scan.  No point in rechecking
-			 * xmax.
-			 */
-			if (TransactionIdPrecedes(xid, snapshot->xmin))
-				return false;
-		}
-
-		for (i = 0; i < snapshot->xcnt; i++)
-		{
-			if (TransactionIdEquals(xid, xip[i]))
-				return true;
-		}
-	}
-	else
-	{
-		int32		j;
-
-		/*
-		 * In recovery we store all xids in the subxact array because it is by
-		 * far the bigger array, and we mostly don't know which xids are
-		 * top-level and which are subxacts. The xip array is empty.
-		 *
-		 * We start by searching subtrans, if we overflowed.
-		 */
-		if (snapshot->suboverflowed)
-		{
-			/*
-			 * Snapshot overflowed, so convert xid to top-level.  This is safe
-			 * because we eliminated too-old XIDs above.
-			 */
-			xid = SubTransGetTopmostTransaction(xid);
-
-			/*
-			 * If xid was indeed a subxact, we might now have an xid < xmin,
-			 * so recheck to avoid an array scan.  No point in rechecking
-			 * xmax.
-			 */
-			if (TransactionIdPrecedes(xid, snapshot->xmin))
-				return false;
-		}
-
-		/*
-		 * We now have either a top-level xid higher than xmin or an
-		 * indeterminate xid. We don't know whether it's top level or subxact
-		 * but it doesn't matter. If it's present, the xid is visible.
-		 */
-		for (j = 0; j < snapshot->subxcnt; j++)
-		{
-			if (TransactionIdEquals(xid, subxip[j]))
-				return true;
-		}
-	}
-
-	return false;
-}
-#endif /* DIVA */

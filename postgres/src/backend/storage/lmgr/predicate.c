@@ -1816,11 +1816,7 @@ GetSerializableTransactionSnapshotInt(Snapshot snapshot,
 
 	/* Get the snapshot, or check that it's safe to use */
 	if (!sourcevxid)
-#ifdef DIVA
-		snapshot = GetSnapshotData(snapshot, true);
-#else
 		snapshot = GetSnapshotData(snapshot);
-#endif
 	else if (!ProcArrayInstallImportedXmin(snapshot->xmin, sourcevxid))
 	{
 		ReleasePredXact(sxact);

@@ -48,9 +48,6 @@
 #include <signal.h>
 
 #include "access/clog.h"
-#ifdef DIVA
-#include "access/parallel.h"
-#endif
 #include "access/subtrans.h"
 #include "access/transam.h"
 #include "access/twophase.h"
@@ -68,10 +65,6 @@
 #include "utils/builtins.h"
 #include "utils/rel.h"
 #include "utils/snapmgr.h"
-
-#ifdef DIVA
-#include "postmaster/ebi_tree_process.h"
-#endif
 
 #define UINT32_ACCESS_ONCE(var)		 ((uint32)(*((volatile uint32 *)&(var))))
 
@@ -2221,13 +2214,8 @@ GetSnapshotDataReuse(Snapshot snapshot)
  * Note: this function should probably not be called with an argument that's
  * not statically allocated (see xip allocation below).
  */
-#ifdef DIVA
-Snapshot
-GetSnapshotData(Snapshot snapshot, bool is_txn)
-#else
 Snapshot
 GetSnapshotData(Snapshot snapshot)
-#endif
 {
 	ProcArrayStruct *arrayP = procArray;
 	TransactionId *other_xids = ProcGlobal->xids;
@@ -2468,35 +2456,7 @@ GetSnapshotData(Snapshot snapshot)
 	if (!TransactionIdIsValid(MyProc->xmin))
 		MyProc->xmin = TransactionXmin = xmin;
 
-#ifdef DIVA
-	snapshot->xmin = xmin;
-	snapshot->xmax = xmax;
-	snapshot->xcnt = count;
-	snapshot->subxcnt = subcount;
-	snapshot->suboverflowed = suboverflowed;
-	snapshot->snapXactCompletionCount = curXactCompletionCount;
-
-	snapshot->curcid = GetCurrentCommandId(false);
-
-	/*
-	 * This is a new snapshot, so set both refcounts are zero, and mark it as
-	 * not copied in persistent memory.
-	 */
-	snapshot->active_count = 0;
-	snapshot->regd_count = 0;
-	snapshot->copied = false;
-
-	/* Bind transaction */
-	if (!FirstSnapshotSet && is_txn)
-		BindTransaction(snapshot);
-#endif
-
 	LWLockRelease(ProcArrayLock);
-
-#ifdef DIVA
-	if ((!(IsInParallelMode() || IsParallelWorker())) && is_txn)
-		(void) GetCurrentTransactionId();
-#endif
 
 	/* maintain state for GlobalVis* */
 	{
@@ -2586,7 +2546,6 @@ GetSnapshotData(Snapshot snapshot)
 	RecentXmin = xmin;
 	Assert(TransactionIdPrecedesOrEquals(TransactionXmin, RecentXmin));
 
-#ifndef DIVA
 	snapshot->xmin = xmin;
 	snapshot->xmax = xmax;
 	snapshot->xcnt = count;
@@ -2603,7 +2562,6 @@ GetSnapshotData(Snapshot snapshot)
 	snapshot->active_count = 0;
 	snapshot->regd_count = 0;
 	snapshot->copied = false;
-#endif
 
 	GetSnapshotDataInitOldSnapshot(snapshot);
 
@@ -3090,60 +3048,6 @@ GetOldestSafeDecodingTransactionId(bool catalogOnly)
 	return oldestSafeXid;
 }
 
-#ifdef DIVA
-TransactionId
-PLeafGetOldestActiveTransactionId(void)
-{
-	ProcArrayStruct *arrayP = procArray;
-	TransactionId oldestRunningXid = MyMaxTransactionId;
-	int			index;
-
-	Assert(!RecoveryInProgress());
-
-	/*
-	 * Spin over procArray collecting all xids and subxids.
-	 */
-	LWLockAcquire(ProcArrayLock, LW_SHARED);
-	for (index = 0; index < arrayP->numProcs; index++)
-	{
-		int			pgprocno = arrayP->pgprocnos[index];
-		PGPROC	   *pgproc = &allProcs[pgprocno];
-		TransactionId xid;
-
-		/* Fetch xid just once - see GetNewTransactionId */
-		xid = UINT32_ACCESS_ONCE(pgproc->xid);
-		if (!TransactionIdIsNormal(xid))
-			continue;
-
-		if (xid == 0)
-			continue;
-
-		if (TransactionIdPrecedes(xid, oldestRunningXid))
-				oldestRunningXid = xid;
-		/*
-		 * Top-level XID of a transaction is always less than any of its
-		 * subxids, so we don't need to check if any of the subxids are
-		 * smaller than oldestRunningXid
-		 */
-	}
-	LWLockRelease(ProcArrayLock);
-
-	return oldestRunningXid;
-}
-
-TransactionId
-PLeafGetMaxTransactionId(void)
-{
-	return XidFromFullTransactionId(ShmemVariableCache->nextXid);
-}
-
-TransactionId
-EbiGetMaxTransactionId(void)
-{
-	return PLeafGetMaxTransactionId();
-}
-
-#endif
 /*
  * GetVirtualXIDsDelayingChkpt -- Get the VXIDs of transactions that are
  * delaying checkpoint because they have critical actions in progress.

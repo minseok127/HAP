@@ -85,17 +85,6 @@ bool		IgnoreSystemIndexes = false;
  * ----------------------------------------------------------------
  */
 
-#ifdef DIVA
-static void j3vm_segfault_handler(int sig);
-
-static void
-j3vm_segfault_handler(int sig)
-{
-	ereport(LOG, (errmsg("@@@@@ %d segfault", MyProcPid)));
-	sleep(3600);
-}
-#endif /* DIVA */
-
 /*
  * Initialize the basic environment for a postmaster child
  *
@@ -106,10 +95,6 @@ void
 InitPostmasterChild(void)
 {
 	IsUnderPostmaster = true;	/* we are a postmaster subprocess now */
-
-#ifdef DIVA
-	signal(SIGSEGV, j3vm_segfault_handler);
-#endif /* DIVA */
 
 	/*
 	 * Start our win32 signal implementation. This has to be done after we
@@ -300,15 +285,6 @@ GetBackendTypeDesc(BackendType backendType)
 		case B_WAL_WRITER:
 			backendDesc = "walwriter";
 			break;
-#ifdef DIVA
-		case B_EBI_TREE:
-			backendDesc = "EBI tree worker";
-			break;
-
-		case B_PLEAF_MANAGER:
-			backendDesc = "pleaf manager";
-			break;
-#endif
 		case B_ARCHIVER:
 			backendDesc = "archiver";
 			break;

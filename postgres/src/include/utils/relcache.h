@@ -64,10 +64,6 @@ typedef enum IndexAttrBitmapKind
 extern Bitmapset *RelationGetIndexAttrBitmap(Relation relation,
 											 IndexAttrBitmapKind attrKind);
 
-#ifdef DIVA
-extern bool IsSiro(Relation relation);
-#endif
-
 extern Bitmapset *RelationGetIdentityKeyBitmap(Relation relation);
 
 extern void RelationGetExclusionInfo(Relation indexRelation,

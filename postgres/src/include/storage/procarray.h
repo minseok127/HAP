@@ -44,11 +44,7 @@ extern void KnownAssignedTransactionIdsIdleMaintenance(void);
 extern int	GetMaxSnapshotXidCount(void);
 extern int	GetMaxSnapshotSubxidCount(void);
 
-#ifdef DIVA
-extern Snapshot GetSnapshotData(Snapshot snapshot, bool is_txn);
-#else
 extern Snapshot GetSnapshotData(Snapshot snapshot);
-#endif
 
 extern bool ProcArrayInstallImportedXmin(TransactionId xmin,
 										 VirtualTransactionId *sourcevxid);
@@ -63,11 +59,6 @@ extern TransactionId GetOldestTransactionIdConsideredRunning(void);
 extern TransactionId GetOldestActiveTransactionId(void);
 extern TransactionId GetOldestSafeDecodingTransactionId(bool catalogOnly);
 
-#ifdef DIVA
-extern TransactionId PLeafGetOldestActiveTransactionId(void);
-extern TransactionId PLeafGetMaxTransactionId(void);
-extern TransactionId EbiGetMaxTransactionId(void);
-#endif
 extern void GetReplicationHorizons(TransactionId *slot_xmin, TransactionId *catalog_xmin);
 
 extern VirtualTransactionId *GetVirtualXIDsDelayingChkpt(int *nvxids, int type);

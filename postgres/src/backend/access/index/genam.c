@@ -392,10 +392,6 @@ systable_beginscan(Relation heapRelation,
 	SysScanDesc sysscan;
 	Relation	irel;
 
-#ifdef DIVA
-	heapRelation->is_systable = true;
-#endif
-
 	if (indexOK &&
 		!IgnoreSystemIndexes &&
 		!ReindexIsProcessingIndex(indexId))
@@ -653,10 +649,6 @@ systable_beginscan_ordered(Relation heapRelation,
 {
 	SysScanDesc sysscan;
 	int			i;
-
-#ifdef DIVA
-	heapRelation->is_systable = true;
-#endif
 
 	/* REINDEX can probably be a hard error here ... */
 	if (ReindexIsProcessingIndex(RelationGetRelid(indexRelation)))

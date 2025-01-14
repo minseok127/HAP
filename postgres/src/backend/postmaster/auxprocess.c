@@ -33,11 +33,6 @@
 #include "utils/ps_status.h"
 #include "utils/rel.h"
 
-#ifdef DIVA
-#include "storage/pleaf_mgr.h"
-#include "postmaster/ebi_tree_process.h"
-#endif
-
 static void ShutdownAuxiliaryProcess(int code, Datum arg);
 
 
@@ -81,15 +76,6 @@ AuxiliaryProcessMain(AuxProcType auxtype)
 		case WalWriterProcess:
 			MyBackendType = B_WAL_WRITER;
 			break;
-#ifdef DIVA
-		case EbiTreeProcess:
-			MyBackendType = B_EBI_TREE;
-			break;
-
-		case PLeafManagerProcess:
-			MyBackendType = B_PLEAF_MANAGER;
-			break;
-#endif
 		case WalReceiverProcess:
 			MyBackendType = B_WAL_RECEIVER;
 			break;
@@ -169,18 +155,6 @@ AuxiliaryProcessMain(AuxProcType auxtype)
 		case WalWriterProcess:
 			WalWriterMain();
 			proc_exit(1);
-
-#ifdef DIVA
-		case EbiTreeProcess:
-			/* don't set signals, ebitree has its own agenda */
-			EbiTreeProcessMain();
-			proc_exit(1);	/* should never return */
-
-		case PLeafManagerProcess:
-			/* don't set signals, pleaf manager has its own agenda */
-			PLeafManagerMain();
-			proc_exit(1);		/* should never return */
-#endif
 
 		case WalReceiverProcess:
 			WalReceiverMain();

@@ -173,15 +173,6 @@ extern PGDLLIMPORT char *DataDir;
 extern PGDLLIMPORT int data_directory_mode;
 
 extern PGDLLIMPORT int NBuffers;
-#ifdef DIVA
-extern PGDLLIMPORT int NPLeafBuffers;
-extern PGDLLIMPORT int NPLeafInstances;
-extern PGDLLIMPORT int NPLeafInitPages;
-
-extern PGDLLIMPORT int NEbiTreeBuffers;
-extern PGDLLIMPORT int NEbiTreeInstances;
-extern PGDLLIMPORT int NEbiTreeInitPages;
-#endif /* DIVA */
 extern PGDLLIMPORT int MaxBackends;
 extern PGDLLIMPORT int MaxConnections;
 extern PGDLLIMPORT int max_worker_processes;
@@ -343,10 +334,6 @@ typedef enum BackendType
 	B_WAL_RECEIVER,
 	B_WAL_SENDER,
 	B_WAL_WRITER,
-#ifdef DIVA
-	B_EBI_TREE,
-	B_PLEAF_MANAGER,
-#endif
 	B_ARCHIVER,
 	B_LOGGER,
 } BackendType;
@@ -447,10 +434,6 @@ typedef enum
 	ArchiverProcess,
 	CheckpointerProcess,
 	WalWriterProcess,
-#ifdef DIVA
-	EbiTreeProcess,
-	PLeafManagerProcess,
-#endif
 	WalReceiverProcess,
 
 	NUM_AUXPROCTYPES			/* Must be last! */
@@ -463,10 +446,6 @@ extern PGDLLIMPORT AuxProcType MyAuxProcType;
 #define AmArchiverProcess()			(MyAuxProcType == ArchiverProcess)
 #define AmCheckpointerProcess()		(MyAuxProcType == CheckpointerProcess)
 #define AmWalWriterProcess()		(MyAuxProcType == WalWriterProcess)
-#ifdef DIVA
-#define AmEbiTreeProcess()		(MyAuxProcType == EbiTreeProcess)
-#define	AmPLeafManagerProcess()		(MyAuxProcType == PLeafManagerProcess)
-#endif
 #define AmWalReceiverProcess()		(MyAuxProcType == WalReceiverProcess)
 
 

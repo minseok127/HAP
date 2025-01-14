@@ -1305,10 +1305,6 @@ retry:
 	}
 #endif
 
-#ifdef DIVA
-	relation->is_systable = false;
-#endif
-
 	return relation;
 }
 
@@ -6809,28 +6805,3 @@ unlink_initfile(const char *initfilename, int elevel)
 							initfilename)));
 	}
 }
-
-
-#ifdef DIVA
-/*
- * Whether tuples in this relation is siro or not is found out
- * from the number of index about the relation. If the number is one,
- * it means this relation is siro.
- * Don't apply siro to system tables.
- */
-bool IsSiro(Relation relation)
-{
-	if (relation == NULL)
-		return false;
-
-  if (IsSystemRelation(relation))
-    /* Skip system tables. */
-    return false;
-
-  if (relation->rd_node.dbNode == 1)
-    /* Skip information_schema */
-    return false;
-
-	return true;
-}
-#endif

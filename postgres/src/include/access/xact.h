@@ -22,9 +22,6 @@
 #include "storage/relfilenode.h"
 #include "storage/sinval.h"
 
-#ifdef DIVA
-#include "utils/snapshot.h"
-#endif
 /*
  * Maximum size of Global Transaction ID (including '\0').
  *
@@ -484,11 +481,6 @@ extern void RegisterXactCallback(XactCallback callback, void *arg);
 extern void UnregisterXactCallback(XactCallback callback, void *arg);
 extern void RegisterSubXactCallback(SubXactCallback callback, void *arg);
 extern void UnregisterSubXactCallback(SubXactCallback callback, void *arg);
-
-#ifdef DIVA
-extern void BindTransaction(Snapshot snapshot);
-extern void UnbindTransaction(void);
-#endif
 
 extern bool IsSubxactTopXidLogPending(void);
 extern void MarkSubxactTopXidLogged(void);

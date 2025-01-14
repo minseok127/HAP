@@ -48,11 +48,6 @@
 #include "storage/sinvaladt.h"
 #include "storage/spin.h"
 
-#ifdef DIVA
-#include "storage/pleaf.h"
-#include "postmaster/ebi_tree_process.h"
-#endif
-
 #include "utils/snapmgr.h"
 
 /* GUCs */
@@ -147,10 +142,6 @@ CalculateShmemSize(int *num_semaphores)
 	size = add_size(size, SyncScanShmemSize());
 	size = add_size(size, AsyncShmemSize());
 	size = add_size(size, StatsShmemSize());
-#ifdef DIVA /* add_size our system in here */
-	size = add_size(size, EbiTreeShmemSize());
-	size = add_size(size, PLeafShmemSize());
-#endif
 #ifdef EXEC_BACKEND
 	size = add_size(size, ShmemBackendArraySize());
 #endif
@@ -303,11 +294,6 @@ CreateSharedMemoryAndSemaphores(void)
 	SyncScanShmemInit();
 	AsyncShmemInit();
 	StatsShmemInit();
-
-#ifdef DIVA /* Initialize our system in here */
-	EbiTreeShmemInit();
-	PLeafInit();
-#endif
 
 #ifdef EXEC_BACKEND
 

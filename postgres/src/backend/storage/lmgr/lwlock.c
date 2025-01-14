@@ -147,12 +147,6 @@ static const char *const BuiltinTrancheNames[] = {
 	"WALInsert",
 	/* LWTRANCHE_BUFFER_CONTENT: */
 	"BufferContent",
-#ifdef DIVA
-	/* LWTRANCHE_PLEAF_BUFFER_IO: */
-	"PLeafBufferIO",
-	/* LWTRANCHE_EBI_NAMED_LOCK: */
-	"EbiNamedLock",
-#endif
 	/* LWTRANCHE_REPLICATION_ORIGIN_STATE: */
 	"ReplicationOriginState",
 	/* LWTRANCHE_REPLICATION_SLOT_IO: */
@@ -161,14 +155,6 @@ static const char *const BuiltinTrancheNames[] = {
 	"LockFastPath",
 	/* LWTRANCHE_BUFFER_MAPPING: */
 	"BufferMapping",
-#ifdef DIVA
-	/* LWTRANCHE_PLEAF_MAPPING: */
-	"PLeafMapping",
-	/* LWTRANCHE_EBI_TREE_MAPPING: */
-	"EbiTreeMapping",
-	/* LWTRANCHE_EBI_TREE: */
-	"EbiTree",
-#endif
 	/* LWTRANCHE_LOCK_MANAGER: */
 	"LockManager",
 	/* LWTRANCHE_PREDICATE_LOCK_MANAGER: */
@@ -541,31 +527,6 @@ InitializeLWLocks(void)
 	for (id = 0; id < NUM_BUFFER_PARTITIONS; id++, lock++)
 		LWLockInitialize(&lock->lock, LWTRANCHE_BUFFER_MAPPING);
 
-#ifdef DIVA
-	/* Initialize pleaf-buffer mapping LWLocks in main array */
-	lock = MainLWLockArray + NUM_INDIVIDUAL_LWLOCKS + NUM_BUFFER_PARTITIONS;
-	for (id = 0; id < NUM_PLEAF_PARTITIONS; id++, lock++)
-		LWLockInitialize(&lock->lock, LWTRANCHE_PLEAF_MAPPING);
-
-	/* Initialize ebi-tree mapping LWLocks in main array */
-	lock = MainLWLockArray + NUM_INDIVIDUAL_LWLOCKS +
-		NUM_BUFFER_PARTITIONS + NUM_PLEAF_PARTITIONS;
-	for (id = 0; id < NUM_EBI_TREE_PARTITIONS; id++, lock++)
-		LWLockInitialize(&lock->lock, LWTRANCHE_EBI_TREE_MAPPING);
-	
-	/* Initialize lmgrs' LWLocks in main array */
-	lock = MainLWLockArray + NUM_INDIVIDUAL_LWLOCKS + 
-		NUM_BUFFER_PARTITIONS + NUM_PLEAF_PARTITIONS + NUM_EBI_TREE_PARTITIONS;
-	for (id = 0; id < NUM_LOCK_PARTITIONS; id++, lock++)
-		LWLockInitialize(&lock->lock, LWTRANCHE_LOCK_MANAGER);
-
-	/* Initialize predicate lmgrs' LWLocks in main array */
-	lock = MainLWLockArray + NUM_INDIVIDUAL_LWLOCKS +
-		NUM_BUFFER_PARTITIONS + NUM_PLEAF_PARTITIONS + NUM_EBI_TREE_PARTITIONS +
-		NUM_LOCK_PARTITIONS;
-	for (id = 0; id < NUM_PREDICATELOCK_PARTITIONS; id++, lock++)
-		LWLockInitialize(&lock->lock, LWTRANCHE_PREDICATE_LOCK_MANAGER);
-#else
 	/* Initialize lmgrs' LWLocks in main array */
 	lock = MainLWLockArray + LOCK_MANAGER_LWLOCK_OFFSET;
 	for (id = 0; id < NUM_LOCK_PARTITIONS; id++, lock++)
@@ -575,7 +536,6 @@ InitializeLWLocks(void)
 	lock = MainLWLockArray + PREDICATELOCK_MANAGER_LWLOCK_OFFSET;
 	for (id = 0; id < NUM_PREDICATELOCK_PARTITIONS; id++, lock++)
 		LWLockInitialize(&lock->lock, LWTRANCHE_PREDICATE_LOCK_MANAGER);
-#endif
 
 	/*
 	 * Copy the info about any named tranches into shared memory (so that

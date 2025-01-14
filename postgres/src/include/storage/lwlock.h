@@ -50,9 +50,6 @@ typedef struct LWLock
  * locks is small but some are heavily contended.
  */
 #define LWLOCK_PADDED_SIZE	PG_CACHE_LINE_SIZE
-#ifdef DIVA
-#define LWLOCK_MINIMAL_SIZE (sizeof(LWLock) <= 32 ? 32 : 64)
-#endif
 
 /* LWLock, padded to a full cache line size */
 typedef union LWLockPadded
@@ -60,15 +57,7 @@ typedef union LWLockPadded
 	LWLock		lock;
 	char		pad[LWLOCK_PADDED_SIZE];
 } LWLockPadded;
-#ifdef DIVA
-// typedef union LWLockPadded LWLockMinimallyPadded;
-/* LWLock, minimally padded */
-typedef union LWLockMinimallyPadded
-{
-	LWLock		lock;
-	char		pad[LWLOCK_MINIMAL_SIZE];
-} LWLockMinimallyPadded;
-#endif
+
 extern PGDLLIMPORT LWLockPadded *MainLWLockArray;
 
 /* struct for storing named tranche information */
@@ -93,22 +82,6 @@ extern PGDLLIMPORT int NamedLWLockTrancheRequests;
 /* Number of partitions of the shared buffer mapping hashtable */
 #define NUM_BUFFER_PARTITIONS  128
 
-#ifdef DIVA
-#ifdef PLEAF_NUM_PAGE
-#define NUM_PLEAF_PARTITIONS 128
-#else
-/* Default number of pleaf buffer partitions */
-#define NUM_PLEAF_PARTITIONS (1024)
-#endif /* PLEAF_NUM_PAGE */
-
-#ifdef EBI_NUM_PAGE
-#define NUM_EBI_TREE_PARTITIONS 128
-#else
-/* Default number of ebi buffer partitions */
-#define NUM_EBI_TREE_PARTITIONS (1024)
-#endif /* EBI_NUM_PAGE */
-#endif /* DIVA */
-
 /* Number of partitions the shared lock tables are divided into */
 #define LOG2_NUM_LOCK_PARTITIONS  4
 #define NUM_LOCK_PARTITIONS  (1 << LOG2_NUM_LOCK_PARTITIONS)
@@ -120,17 +93,8 @@ extern PGDLLIMPORT int NamedLWLockTrancheRequests;
 /* Offsets for various chunks of preallocated lwlocks. */
 #define BUFFER_MAPPING_LWLOCK_OFFSET	NUM_INDIVIDUAL_LWLOCKS
 
-#ifdef DIVA
-#define PLEAF_MAPPING_LWLOCK_OFFSET		\
-	(BUFFER_MAPPING_LWLOCK_OFFSET + NUM_BUFFER_PARTITIONS)
-#define EBI_TREE_MAPPING_LWLOCK_OFFSET		\
-	(PLEAF_MAPPING_LWLOCK_OFFSET + NUM_PLEAF_PARTITIONS)
-#define LOCK_MANAGER_LWLOCK_OFFSET		\
-	(EBI_TREE_MAPPING_LWLOCK_OFFSET + NUM_EBI_TREE_PARTITIONS)
-#else
 #define LOCK_MANAGER_LWLOCK_OFFSET		\
 	(BUFFER_MAPPING_LWLOCK_OFFSET + NUM_BUFFER_PARTITIONS)
-#endif /* DIVA */
 
 #define PREDICATELOCK_MANAGER_LWLOCK_OFFSET \
 	(LOCK_MANAGER_LWLOCK_OFFSET + NUM_LOCK_PARTITIONS)
@@ -213,19 +177,10 @@ typedef enum BuiltinTrancheIds
 	LWTRANCHE_SERIAL_BUFFER,
 	LWTRANCHE_WAL_INSERT,
 	LWTRANCHE_BUFFER_CONTENT,
-#ifdef DIVA
-	LWTRANCHE_PLEAF_BUFFER_IO,
-	LWTRANCHE_NAMED_LOCK,
-#endif
 	LWTRANCHE_REPLICATION_ORIGIN_STATE,
 	LWTRANCHE_REPLICATION_SLOT_IO,
 	LWTRANCHE_LOCK_FASTPATH,
 	LWTRANCHE_BUFFER_MAPPING,
-#ifdef DIVA
-	LWTRANCHE_PLEAF_MAPPING,
-	LWTRANCHE_EBI_TREE_MAPPING,
-	LWTRANCHE_EBI_TREE,
-#endif
 	LWTRANCHE_LOCK_MANAGER,
 	LWTRANCHE_PREDICATE_LOCK_MANAGER,
 	LWTRANCHE_PARALLEL_HASH_JOIN,

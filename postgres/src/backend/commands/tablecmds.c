@@ -6048,24 +6048,10 @@ ATRewriteTable(AlteredTableInfo *tab, Oid OIDNewHeap, LOCKMODE lockmode)
 				table_tuple_insert(newrel, insertslot, mycid,
 								   ti_options, bistate);
 
-#ifdef DIVA
-			if (((HeapScanDesc)scan)->rs_cindex
-					== ((HeapScanDesc)scan)->rs_ntuples - 1)
-			{
-				ResetExprContext(econtext);
-
-				for (int i = 0; i < ((HeapScanDesc)scan)->rs_ntuples; i++)
-					((HeapScanDesc)scan)->rs_vistuples_copied[i] = NULL;
-			}
-#else
 			ResetExprContext(econtext);
-#endif /* DIVA */
 
 			CHECK_FOR_INTERRUPTS();
 		}
-#ifdef DIVA
-		ResetExprContext(econtext);
-#endif /* DIVA */
 
 		MemoryContextSwitchTo(oldCxt);
 		table_endscan(scan);

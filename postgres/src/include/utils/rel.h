@@ -248,16 +248,7 @@ typedef struct RelationData
 	bool		pgstat_enabled; /* should relation stats be counted */
 	/* use "struct" here to avoid needing to include pgstat.h: */
 	struct PgStat_TableStatus *pgstat_info; /* statistics collection area */
-#ifdef DIVA
-	/*                                                                           
-	 * We want to apply siro to only heap tables but not system tables.     
-	 * This variable is set false in the RelationBuildDesc() function, and       
-	 * set true in the systable_beginscan() & systable_beginscan_ordered()       
-	 * functions. We assume non system tables is never scanned by systable_*     
-	 * functions and system tables must be scanned by these functions.           
-	 */       
-	bool is_systable;
-#endif 
+
 #ifdef HAP
 	bool rd_is_hap;
 	bool rd_hap_partitioned;

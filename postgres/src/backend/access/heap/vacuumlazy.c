@@ -1554,11 +1554,8 @@ lazy_scan_prune(LVRelState *vacrel,
 				recently_dead_tuples;
 	int			nnewlpdead;
 	int			nfrozen;
-#ifdef DIVA
-#else
 	TransactionId NewRelfrozenXid;
 	MultiXactId NewRelminMxid;
-#endif
 	OffsetNumber deadoffsets[MaxHeapTuplesPerPage];
 	xl_heap_freeze_tuple frozen[MaxHeapTuplesPerPage];
 
@@ -1574,11 +1571,8 @@ lazy_scan_prune(LVRelState *vacrel,
 retry:
 
 	/* Initialize (or reset) page-level state */
-#ifdef DIVA
-#else
 	NewRelfrozenXid = vacrel->NewRelfrozenXid;
 	NewRelminMxid = vacrel->NewRelminMxid;
-#endif
 	tuples_deleted = 0;
 	lpdead_items = 0;
 	live_tuples = 0;
@@ -1662,12 +1656,6 @@ retry:
 		tuple.t_len = ItemIdGetLength(itemid);
 		tuple.t_tableOid = RelationGetRelid(rel);
 
-#ifdef DIVA
-		/*
-		 * Checking vacummable about this tuple is already done
-		 * in heap_page_prune(). We don't need to do redundant work.
-		 */
-#else
 		/*
 		 * DEAD tuples are almost always pruned into LP_DEAD line pointers by
 		 * heap_page_prune(), but it's possible that the tuple state changed
@@ -1804,11 +1792,10 @@ retry:
 		 */
 		if (!tuple_totally_frozen)
 			prunestate->all_frozen = false;
-#endif
 	}
 
 	vacrel->offnum = InvalidOffsetNumber;
-#ifndef DIVA
+
 	/*
 	 * We have now divided every item on the page into either an LP_DEAD item
 	 * that will need to be vacuumed in indexes later, or a LP_NORMAL tuple
@@ -1817,7 +1804,7 @@ retry:
 	 */
 	vacrel->NewRelfrozenXid = NewRelfrozenXid;
 	vacrel->NewRelminMxid = NewRelminMxid;
-#endif
+
 	/*
 	 * Consider the need to freeze any items with tuple storage from the page
 	 * first (arbitrary)
@@ -1875,7 +1862,6 @@ retry:
 	 * we've finished pruning and freezing, make sure that we're in total
 	 * agreement with heap_page_is_all_visible() using an assertion.
 	 */
-#ifndef DIVA
 #ifdef USE_ASSERT_CHECKING
 	/* Note that all_frozen value does not matter when !all_visible */
 	if (prunestate->all_visible)
@@ -1899,7 +1885,7 @@ retry:
 			   cutoff == prunestate->visibility_cutoff_xid);
 	}
 #endif /* USE_ASSERT_CHECKING */
-#endif /* DIVA */
+
 	/*
 	 * Now save details of the LP_DEAD items from the page in vacrel
 	 */

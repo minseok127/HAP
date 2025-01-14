@@ -615,9 +615,6 @@ index_fetch_heap(IndexScanDesc scan, TupleTableSlot *slot)
 bool
 index_getnext_slot(IndexScanDesc scan, ScanDirection direction, TupleTableSlot *slot)
 {
-#ifdef DIVA
-	bool		siro;
-#endif
 	for (;;)
 	{
 		if (!scan->xs_heap_continue)
@@ -640,21 +637,9 @@ index_getnext_slot(IndexScanDesc scan, ScanDirection direction, TupleTableSlot *
 		 * the index.
 		 */
 		Assert(ItemPointerIsValid(&scan->xs_heaptid));
-#ifdef DIVA
-		/*
-		 * We only want to change the fetch routine for a relation
-		 * having siro tuples
-		 */
-		siro = IsSiro(scan->xs_heapfetch->rel);
-		if (siro)
-			return index_fetch_heap(scan, slot);
 
 		if (index_fetch_heap(scan, slot))
 			return true;
-#else
-		if (index_fetch_heap(scan, slot))
-			return true;
-#endif
 	}
 
 	return false;

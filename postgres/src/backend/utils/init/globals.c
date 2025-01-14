@@ -134,37 +134,7 @@ int			max_parallel_maintenance_workers = 2;
  * register background workers.
  */
 int			NBuffers = 1000;
-#ifdef DIVA /* Global variables */
 
-#ifdef PLEAF_NUM_PAGE
-int		NPLeafBuffers = PLEAF_NUM_PAGE;
-#else
-/* Default : 40M */
-int		NPLeafBuffers = 100 * 10;
-#endif /* PLEAF_NUM_PAGE */
-
-#ifdef PLEAF_NUM_INSTANCE
-int		NPLeafInstances = PLEAF_NUM_INSTANCE; /* We use 4-bit */
-#else
-int		NPLeafInstances = 4;
-#endif /* PLEAF_NUM_INSTANCE */
-
-#ifdef PLEAF_INIT_PAGES
-/* NPLeafInitPages is the number of pages per instance in initialization */
-int NPLeafInitPages = PLEAF_INIT_PAGES;
-#else
-int NPLeafInitPages = 0;
-#endif /* PLEAF_INIT_PAGES */
-
-#ifdef EBI_NUM_PAGE
-int		NEbiTreeBuffers = EBI_NUM_PAGE;
-#else
-/* Default : 40M */
-// int		NEbiTreeBuffers = 1000 * 10;
-int		NEbiTreeBuffers = 10 * 10;
-#endif  /* EBI_NUM_PAGE */
-
-#endif /* DIVA */
 int			MaxConnections = 90;
 int			max_worker_processes = 8;
 int			max_parallel_workers = 8;
