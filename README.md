@@ -24,8 +24,6 @@ HAP_HOOK(DefineRelation)
     |    |
     |    -- HAP_HOOK_BODY(DefineRelation)
     |        |
-    |        -- HapGetFkeyTableHiddenAttrInfo()
-    |        |
     |        -- Append hidden attribute as the last column (_hap_hidden_attribute)
     |        |
     |        -- Add the new table into the pg_hap entry
@@ -36,6 +34,7 @@ HAP_HOOK(DefineRelation)
         |
         -- Original DefineRelation()
 ```
+The above pseudocode represents the creation of an HAP table.
 
 ### Encoding
 
