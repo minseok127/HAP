@@ -8,14 +8,40 @@ Hidden attributes are encoded attributes of ancestor tables (dimension tables) i
 
 Attributes are encoded using dictionary encoding and bit-packing. The dictionary is created as a PostgreSQL-style table during the encoding process for the dimension table, with the attribute values of the dimension table becoming entries in the dictionary. These entries are then stored as hidden attributes in a variable-length byte array, where the dictionary's entry IDs are bit-packed for efficient storage.
 
+### CREATE TABLE
+
 ```
+> CREATE ACCESS METHOD hap TYPE TABLE HANDLER haphandler;
+> CREATE TABLE test ( ... ) USING hap;
 ```
 
-# Encoding
+```
+HAP_HOOK(DefineRelation) 
+|
+-- HAP_HOOK_COND(DefineRelation)
+    |
+    -- if access method is hap
+    |    |
+    |    -- HAP_HOOK_BODY(DefineRelation)
+    |        |
+    |        -- HapGetFkeyTableHiddenAttrInfo()
+    |        |
+    |        -- Append hidden attribute as the last column (_hap_hidden_attribute)
+    |        |
+    |        -- Add the new table into the pg_hap entry
+    |        |
+    |        -- Original DefineRelation()
+    |
+    -- else
+        |
+        -- Original DefineRelation()
+```
+
+### Encoding
 
 Encoding is performed by calling the built-in function *locator_hap_encode*. The example below represents encoding the r_name attribute of the region table in the public namespace. Each piece of information is separated by a dot (.).
 ```
-> SELECT locator_hap_encode('public.region.r_name');
+> SELECT hap_encode('public.region.r_name');
 ```
 
 This built-in function internally executes the following query.
