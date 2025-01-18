@@ -47,7 +47,7 @@ CATALOG(pg_hap,9999,HapRelationId)
 	NameData	haprelname;
 } FormData_pg_hap;
 ```
-The above pseudocode represents the creation of an HAP table. First the HAP access method must be registered. This access method will triggers the DefineRelation function to hook into HAP's logic. At this hook function, a hidden attribute is added as the last attribute of the table, and the table is registered in the pg_hap catalog. The pg_hap catalog records the total bit size of the hidden attributes and the number of attributes encoded for each table.
+The above pseudocode represents the creation of an HAP table. First the HAP access method must be registered. This access method will triggers the DefineRelation function to hook into HAP's logic. At this hook function, a hidden attribute is added as the last attribute of the table, and the table is registered in the pg_hap catalog. The pg_hap catalog records the total bit size of the hidden attributes (hapbitsize) and how many attributes are encoded in the hidden attribute (hapdesccount).
 
 ### Encoding
 
