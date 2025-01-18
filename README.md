@@ -51,7 +51,7 @@ The above pseudocode represents the creation of an HAP table. First the HAP acce
 
 ### Encoding
 
-Encoding is performed by calling the built-in function *locator_hap_encode*. The example below represents encoding the r_name attribute of the region table in the public namespace. Each piece of information is separated by a dot (.).
+Encoding is performed by calling the built-in function *hap_encode*. The example below represents encoding the r_name attribute of the region table in the public namespace. Each piece of information is separated by a dot (.).
 ```
 > SELECT hap_encode('public.region.r_name');
 ```
