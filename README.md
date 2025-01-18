@@ -1,4 +1,4 @@
-This repository archives the HAP module, extracted as a submodule of [LOCATOR](https://github.com/snu-dbxlab/LOCATOR) project. The module is located in src/backend/hap, and modifications to existing PostgreSQL functions are marked with the HAP_HOOK keyword and #ifdef HAP.
+This repository archives the HAP module, extracted from the [LOCATOR](https://github.com/snu-dbxlab/LOCATOR) project. The module is located in src/backend/hap, and modifications to existing PostgreSQL functions are marked with the HAP_HOOK keyword and #ifdef HAP.
 
 This README explains implementation details of HAP. It is divided into four main categories: the creation and encoding of HAP tables, retrieving encoded values during the insert process via foreign key checks, the process of pushing down predicates on ancestor tables to hidden attributes in child tables, and the techniques used in the [LOCATOR](https://github.com/snu-dbxlab/LOCATOR) project to find partitions matching the predicates.
 
