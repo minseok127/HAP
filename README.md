@@ -34,7 +34,20 @@ HAP_HOOK(DefineRelation)
         |
         -- Original DefineRelation()
 ```
-The above pseudocode represents the creation of an HAP table.
+```
+/* include/catalog/pg_hap.h */
+CATALOG(pg_hap,9999,HapRelationId)
+{
+	Oid			haprelid		BKI_LOOKUP(pg_class);
+	Oid			happartmapid	BKI_DEFAULT(0);
+	Oid			haprelnamespace;
+	int16		hapbitsize;
+	int16		hapdesccount;
+	bool		hapencoded		BKI_DEFAULT(f);
+	NameData	haprelname;
+} FormData_pg_hap;
+```
+The above pseudocode represents the creation of an HAP table. First the HAP access method must be registered. This access method will triggers the DefineRelation function to hook into HAP's logic. At this hook function, a hidden attribute is added as the last attribute of the table, and the table is registered in the pg_hap catalog. The pg_hap catalog records the total bit size of the hidden attributes and the number of attributes encoded for each table.
 
 ### Encoding
 
