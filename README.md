@@ -38,9 +38,9 @@ HAP_HOOK(DefineRelation)
 /* include/catalog/pg_hap.h */
 CATALOG(pg_hap,9999,HapRelationId)
 {
-	Oid			haprelid		BKI_LOOKUP(pg_class);
-	Oid			happartmapid	BKI_DEFAULT(0);
-	Oid			haprelnamespace;
+	Oid		haprelid		BKI_LOOKUP(pg_class);
+	Oid		happartmapid		BKI_DEFAULT(0);
+	Oid		haprelnamespace;
 	int16		hapbitsize;
 	int16		hapdesccount;
 	bool		hapencoded		BKI_DEFAULT(f);
