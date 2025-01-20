@@ -55,6 +55,13 @@ Encoding is performed by calling the built-in function *hap_encode*. The example
 ```
 > SELECT hap_encode('public.region.r_name');
 ```
+```
+/* src/include/catalog/pg_proc.dat */
+{ oid => '4549', descr => 'encode attribute to hidden attribute and propagate it',
+  proname => 'hap_encode', provolatile => 's',
+  prorettype => 'text', proargtypes => 'text',
+  prosrc => 'hap_encode' }
+```
 
 This built-in function internally executes the following query.
 ```
