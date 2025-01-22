@@ -146,8 +146,6 @@ DECLARE_UNIQUE_INDEX_PKEY(pg_hap_hidden_attribute_desc_relid_descid,9989,HapHidd
 
 DECLARE_UNIQUE_INDEX(pg_hap_hidden_attribute_desc_relid_confrelid_confdescid,9990,HapHiddenAttributeDescRelidConfrelidConfdescidIndexId,on pg_hap_hidden_attribute_desc using btree(haprelid oid_ops, hapconfrelid oid_ops, hapconfdescid int2_ops));
 ```
-The pg_hap_hidden_attribute_desc catalog stores information about the encoded attributes for all tables. This includes not only the dimension tables that are the source of the encoding but also the lower-level tables that inherit the encoded attributes through foreign keys. For example, if *r_name* is encoded in the *region* table, the hidden attribute of *region* must know which bit position and how many bits it occupies. Similarly, the hidden attribute of *nation*, a child table of *region*, must also know the position and size of the bits where *r_name* is encoded within the *nation*'s hidden attribute. This catalog contains such information.
-
 ```
 HapInsertHiddenAttrDesc
 |
@@ -168,7 +166,7 @@ HapInsertHiddenAttrDesc
 		-- HapPropagateHiddenAttrDesc /* recursive */
 
 ```
-One thing to note is that this cataloag is updated not only for the dimension table being encoded but also recursively for all descendant tables connected through foreign key relationships. For example, if *r_name* in the *region* table is encoded, entries are added to pg_hap_hidden_attribute_desc not only for *region* but also for *nation* (which references *region*), *customer* (which references *nation*), and *orders* (which references *customer*), etc. The pseudocode above provides a simplified view of this process.
+The pg_hap_hidden_attribute_desc catalog stores information about the encoded attributes for all tables. This includes not only the dimension tables that are the source of the encoding but also the lower-level tables that inherit the encoded attributes through foreign keys. For example, if *r_name* is encoded in the *region* table, the hidden attribute of *region* must know which bit position and how many bits it occupies. Similarly, the hidden attribute of *nation*, a child table of *region*, must also know the position and size of the bits where *r_name* is encoded within the *nation*'s hidden attribute. This catalog contains such information.
 
 ```
 /* include/catalog/pg_hap_encoded_attribute.h */
