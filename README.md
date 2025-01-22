@@ -166,7 +166,7 @@ HapInsertHiddenAttrDesc
 		-- HapPropagateHiddenAttrDesc /* recursive */
 
 ```
-The pg_hap_hidden_attribute_desc catalog stores information about the encoded attributes for all tables. This includes not only the dimension tables that are the source of the encoding but also the lower-level tables that inherit the encoded attributes through foreign keys. For example, if *r_name* is encoded in the *region* table, the hidden attribute of *region* must know which bit position and how many bits it occupies. Similarly, the hidden attribute of *nation*, a child table of *region*, must also know the position and size of the bits where *r_name* is encoded within the *nation*'s hidden attribute. This catalog contains such information.
+The pg_hap_hidden_attribute_desc catalog stores information about the encoded attributes for all tables. This includes not only the dimension tables that are the source of the encoding but also the lower-level tables that inherit the encoded attributes through foreign keys. For example, if *r_name* is encoded in the *region* table, the hidden attribute of *region* must know which bit position and how many bits it occupies. Similarly, the hidden attribute of *nation*, a child table of *region*, must also know the position and size of the bits where *r_name* is encoded within the *nation*'s hidden attribute. The pseudocode above illustrates this recursive process.
 
 ```
 /* include/catalog/pg_hap_encoded_attribute.h */
