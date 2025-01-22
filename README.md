@@ -56,16 +56,17 @@ The above pseudocode represents the creation of an HAP table. First the HAP acce
 # Encoding
 
 ### hap_encode()
-Encoding is performed by calling the built-in function hap_encode(). The example below represents encoding the *r_name* attribute of the *region* table in the *public* namespace. Each piece of information is separated by a dot (.).
-```
-> SELECT hap_encode('public.region.r_name');
-```
 ```
 /* src/include/catalog/pg_proc.dat */
 { oid => '4549', descr => 'encode attribute to hidden attribute and propagate it',
   proname => 'hap_encode', provolatile => 's',
   prorettype => 'text', proargtypes => 'text',
   prosrc => 'hap_encode' }
+```
+
+Encoding is performed by calling the built-in function hap_encode(). The example below represents encoding the *r_name* attribute of the *region* table in the *public* namespace. Each piece of information is separated by a dot (.).
+```
+> SELECT hap_encode('public.region.r_name');
 ```
 
 This built-in function internally executes the following query.
