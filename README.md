@@ -126,7 +126,15 @@ This built-in function internally executes the following query.
 ```
 This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function hap_build_hidden_attribute_desc() to update the catalog. Finally, it calls the built-in function hap_encode_to_hidden_attribute() to add the encoded values into the hidden attribute.
 
-### hap_build_hidden_attribute_desC()
+### hap_build_hidden_attribute_desc()
+```
+/* src/include/catalog/pg_proc.dat */
+{ oid => '4550', descr => 'build hidden attribute descriptor',
+  proname => 'hap_build_hidden_attribute_desc', provolatile => 's',
+  prorettype => 'int2', proargtypes => 'text int2 oid',
+  prosrc => 'hap_build_hidden_attribute_desc' }
+```
+
 The built-in function hap_build_hidden_attribute_desc() updates the pg_hap_hidden_attribute_desc, pg_hap_encoded_attribute, and pg_hap catalogs. The pg_hap catalog was explained earlier. Here, the hapencoded field in pg_hap is set to indicate that this table is an encoded dimension table.
 
 ```
@@ -184,6 +192,13 @@ DECLARE_UNIQUE_INDEX_PKEY(pg_hap_encoded_attribute_relid_attrnum,9987,HapEncoded
 The pg_hap_encoded_attribute catalog, unlike pg_hap_hidden_attribute_desc, contains only one entry per attribute targeted by hap_encode(). In other words, it represents information about the table and attribute being encoded, not the descendant tables. It provides the necessary information to access the dictionary that maps the encoding values for the attribute.
 
 ### hap_encode_to_hidden_attribute()
+```
+/* src/include/catalog/pg_proc.dat */
+{ oid => '4551', descr => 'encode specific value to hidden attribute and propagate it',
+  proname => 'hap_encode_to_hidden_attribute', provolatile => 's',
+  prorettype => 'void', proargtypes => 'text anyarray int2',
+  prosrc => 'hap_encode_to_hidden_attribute' }
+```
 ```
 SELECT array_cat(tmparray, array_agg((<attrname>))::text[])
 INTO tmparray
