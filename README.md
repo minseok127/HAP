@@ -1,14 +1,14 @@
-This repository archives the HAP module, extracted from the [LOCATOR](https://github.com/snu-dbxlab/LOCATOR) project. The module is located in src/backend/hap, and modifications to existing PostgreSQL functions are marked with the HAP_HOOK keyword and #ifdef HAP. The name HAP is an abbreviation of Hidden Attribute Partitioning, but partitioning is not enforced. In fact, partitioning is handled by LOCATOR's logic, not HAP.
-
-This README explains implementation details of HAP. It is divided into four main categories: (1) the creation and encoding of HAP tables, (2) retrieving encoded values during the insert process via foreign key checks, (3) the process of pushing down predicates on ancestor tables to hidden attributes in child tables, (4) the techniques used in the LOCATOR project to find partitions matching the predicates.
-
 # Hidden attribute
 
 Hidden attributes are encoded attributes of ancestor tables (dimension tables) in a foreign key relationship. When a new tuple is inserted into the child table it receives the encoded values from its parent tuples through a foreign key check and appends them at the end of the child tuple. Parent tuples themselves may have obtained encoded values from their own parent tuples. So the child don't have to perform joins across all ancestor tables to retrieve these values.
 
 Attributes are encoded using dictionary encoding and bit-packing. The dictionary is created as a PostgreSQL-style table during the encoding process for the dimension table, with the attribute values of the dimension table becoming entries in the dictionary. These entries are then stored as hidden attributes in a variable-length byte array, where the dictionary's entry IDs are bit-packed for efficient storage.
 
-### CREATE TABLE
+This repository archives the HAP module, extracted from the [LOCATOR](https://github.com/snu-dbxlab/LOCATOR) project. The module is located in src/backend/hap, and modifications to existing PostgreSQL functions are marked with the HAP_HOOK keyword and #ifdef HAP. The name HAP is an abbreviation of Hidden Attribute Partitioning, but partitioning is not enforced. In fact, partitioning is handled by LOCATOR's logic, not HAP.
+
+This README explains implementation details of HAP. It is divided into five main categories: (1) creating of HAP tables, (2) encoding of hidden attribute, (3) retrieving encoded values during the insert process via foreign key checks, (4) the process of pushing down predicates on ancestor tables to hidden attributes in child tables, (4) the techniques used in the LOCATOR project to find partitions matching the predicates.
+
+# CREATE TABLE
 
 ```
 > CREATE ACCESS METHOD hap TYPE TABLE HANDLER haphandler;
@@ -53,9 +53,9 @@ DECLARE_UNIQUE_INDEX(pg_hap_haprelname_nsp_index,9997,HapNameNspIndexId,on pg_ha
 ```
 The above pseudocode represents the creation of an HAP table. First the HAP access method must be registered. This access method will triggers the DefineRelation function to hook into HAP's logic. At this hook function, a hidden attribute is added as the last attribute of the table, and the table is registered in the pg_hap catalog. The pg_hap catalog records the total bit size of the hidden attribute (hapbitsize) and how many attributes are encoded in the hidden attribute (hapdesccount). This information is aggregated by checking the pg_hap entries of the tables referenced by the new table through foreign keys.
 
-### Encoding
+# Encoding
 
-#### hap_encode()
+### hap_encode()
 Encoding is performed by calling the built-in function hap_encode(). The example below represents encoding the *r_name* attribute of the *region* table in the *public* namespace. Each piece of information is separated by a dot (.).
 ```
 > SELECT hap_encode('public.region.r_name');
@@ -126,7 +126,7 @@ This built-in function internally executes the following query.
 ```
 This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function hap_build_hidden_attribute_desc() to update the catalog. Finally, it calls the built-in function hap_encode_to_hidden_attribute() to add the encoded values into the hidden attribute.
 
-#### hap_build_hidden_attribute_desC()
+### hap_build_hidden_attribute_desC()
 The built-in function hap_build_hidden_attribute_desc() updates the pg_hap_hidden_attribute_desc, pg_hap_encoded_attribute, and pg_hap catalogs. The pg_hap catalog was explained earlier. Here, the hapencoded field in pg_hap is set to indicate that this table is an encoded dimension table.
 
 ```
@@ -183,9 +183,9 @@ CATALOG(pg_hap_encoded_attribute,9988,HapEncodedAttributeRelationId)
 
 DECLARE_UNIQUE_INDEX_PKEY(pg_hap_encoded_attribute_relid_attrnum,9987,HapEncodedAttributeRelidAttrnumIndexId,on pg_hap_encoded_attribute using btree(haprelid oid_ops, hapattrnum int2_ops));
 ```
-The pg_hap_encoded_attribute catalog, unlike pg_hap_hidden_attribute_desc, contains only one entry per attribute targeted by hap_encode(). In other words, it represents information about the table and attribute being encoded, not the descendant tables. It provides the necessary information to access the dictionary that maps the encoding details for the attribute.
+The pg_hap_encoded_attribute catalog, unlike pg_hap_hidden_attribute_desc, contains only one entry per attribute targeted by hap_encode(). In other words, it represents information about the table and attribute being encoded, not the descendant tables. It provides the necessary information to access the dictionary that maps the encoding values for the attribute.
 
-#### hap_encode_to_hidden_attribute()
+### hap_encode_to_hidden_attribute()
 ```
 SELECT array_cat(tmparray, array_agg((<attrname>))::text[])
 INTO tmparray
