@@ -166,7 +166,7 @@ HapInsertHiddenAttrDesc
 		-- HapPropagateHiddenAttrDesc /* recursive */
 
 ```
-One thing to note is that this cataloag is updated not only for the dimension table being encoded but also recursively for all descendant tables connected through foreign key relationships. For example, if *r_name* in the *region* table is encoded, entries are added to pg_hap_hidden_attribute_desc not only for *region* but also for *nation* (which references *region*), *customer* (which references *nation*), and *orders* (which references *customer*). The pseudocode above provides a simplified view of this process.
+One thing to note is that this cataloag is updated not only for the dimension table being encoded but also recursively for all descendant tables connected through foreign key relationships. For example, if *r_name* in the *region* table is encoded, entries are added to pg_hap_hidden_attribute_desc not only for *region* but also for *nation* (which references *region*), *customer* (which references *nation*), and *orders* (which references *customer*), etc. The pseudocode above provides a simplified view of this process.
 
 ```
 /* include/catalog/pg_hap_encoded_attribute.h */
