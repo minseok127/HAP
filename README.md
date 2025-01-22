@@ -125,7 +125,7 @@ This built-in function internally executes the following query.
 ```
 This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function hap_build_hidden_attribute_desc() to update the catalog. Finally, it calls the built-in function hap_encode_to_hidden_attribute() to add the encoded values into the hidden attribute.
 
-The built-in function hap_build_hidden_attribute_desc() updates the pg_hap_hidden_attribute_desc, pg_hap_encoded_attribute, and pg_hap catalogs. This function set the hapencoded flag in the pg_hap entry to indicate that the table is a target for encoding.
+The built-in function hap_build_hidden_attribute_desc() updates the pg_hap_hidden_attribute_desc, pg_hap_encoded_attribute, and pg_hap catalogs. The pg_hap catalog was explained earlier. Here, the hapencoded field in pg_hap is set to indicate that this table is an encoded dimension table.
 
 ```
 /* include/catalog/pg_hap_hidden_attribute_desc.h */
