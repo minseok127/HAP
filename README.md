@@ -150,8 +150,8 @@ pg_hap_hidden_attribute_desc stores information about the encoded attributes for
 /* include/catalog/pg_hap_encoded_attribute.h */
 CATALOG(pg_hap_encoded_attribute,9988,HapEncodedAttributeRelationId)
 {
-	Oid		haprelid	BKI_LOOKUP(pg_class);
-	Oid		hapencodetable;
+	Oid	haprelid		BKI_LOOKUP(pg_class);
+	Oid	hapencodetable;
 	int16	hapattrnum;
 	int16	hapdescid;
 	int32	hapcardinality;
