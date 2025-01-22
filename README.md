@@ -55,6 +55,7 @@ The above pseudocode represents the creation of an HAP table. First the HAP acce
 
 ### Encoding
 
+#### 1. hap_encode()
 Encoding is performed by calling the built-in function hap_encode(). The example below represents encoding the *r_name* attribute of the *region* table in the *public* namespace. Each piece of information is separated by a dot (.).
 ```
 > SELECT hap_encode('public.region.r_name');
@@ -123,8 +124,9 @@ This built-in function internally executes the following query.
  * -------------
  */
 ```
-This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function hap_build_hidden_attribute_desc() to update the catalog. Finally, it calls the built-in function hap_encode_to_hidden_attribute() to add the encoded values into the hidden attribute.
+This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function **hap_build_hidden_attribute_desc()** to update the catalog. Finally, it calls the built-in function **hap_encode_to_hidden_attribute()** to add the encoded values into the hidden attribute.
 
+#### 2. hap_build_hidden_attribute_desC()
 The built-in function hap_build_hidden_attribute_desc() updates the pg_hap_hidden_attribute_desc, pg_hap_encoded_attribute, and pg_hap catalogs. The pg_hap catalog was explained earlier. Here, the hapencoded field in pg_hap is set to indicate that this table is an encoded dimension table.
 
 ```
@@ -180,6 +182,20 @@ CATALOG(pg_hap_encoded_attribute,9988,HapEncodedAttributeRelationId)
 } FormData_pg_hap_encoded_attribute;
 
 DECLARE_UNIQUE_INDEX_PKEY(pg_hap_encoded_attribute_relid_attrnum,9987,HapEncodedAttributeRelidAttrnumIndexId,on pg_hap_encoded_attribute using btree(haprelid oid_ops, hapattrnum int2_ops));
+```
+The pg_hap_encoded_attribute catalog, unlike pg_hap_hidden_attribute_desc, contains only one entry per attribute targeted by hap_encode(). In other words, it represents information about the table and attribute being encoded, not the descendant tables. It provides the necessary information to access the dictionary that maps the encoding details for the attribute.
+
+#### 3. hap_encode_to_hidden_attribute()
+```
+SELECT array_cat(tmparray, array_agg((<attrname>))::text[])
+INTO tmparray
+FROM __hap_<relname>_<attrname>_encode_table;
+cardinality := cardinality(tmparray);
+```
+```
+SELECT pg_typeof(<attrname>)
+INTO valtype
+FROM <namespace>.<relname>;
 ```
 
 # Foriegn key check
