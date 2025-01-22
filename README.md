@@ -55,7 +55,7 @@ The above pseudocode represents the creation of an HAP table. First the HAP acce
 
 ### Encoding
 
-Encoding is performed by calling the built-in function *hap_encode*. The example below represents encoding the *r_name* attribute of the *region* table in the *public* namespace. Each piece of information is separated by a dot (.).
+Encoding is performed by calling the built-in function hap_encode(). The example below represents encoding the *r_name* attribute of the *region* table in the *public* namespace. Each piece of information is separated by a dot (.).
 ```
 > SELECT hap_encode('public.region.r_name');
 ```
@@ -123,9 +123,9 @@ This built-in function internally executes the following query.
  * -------------
  */
 ```
-This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function *hap_build_hidden_attribute_desc* to update the catalog. Finally, it calls the built-in function *hap_encode_to_hidden_attribute* to add the encoded values into the hidden attribute.
+This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function hap_build_hidden_attribute_desc() to update the catalog. Finally, it calls the built-in function hap_encode_to_hidden_attribute() to add the encoded values into the hidden attribute.
 
-The built-in function hap_build_hidden_attribute_desc updates the pg_hap_hidden_attribute_desc, pg_hap_encoded_attribute, and pg_hap catalogs. The pg_hap catalog was explained earlier, and the table being encoded is already registered as an entry in pg_hap. This function activates the hapencoded flag in the entry to indicate that the table is a target for encoding.
+The built-in function hap_build_hidden_attribute_desc() updates the pg_hap_hidden_attribute_desc, pg_hap_encoded_attribute, and pg_hap catalogs. The pg_hap catalog was explained earlier, and the table being encoded is already registered as an entry in pg_hap. This function activates the hapencoded flag in the entry to indicate that the table is a target for encoding.
 
 ```
 /* include/catalog/pg_hap_hidden_attribute_desc.h */
