@@ -131,8 +131,8 @@ The built-in function hap_build_hidden_attribute_desc() updates the pg_hap_hidde
 /* include/catalog/pg_hap_hidden_attribute_desc.h */
 CATALOG(pg_hap_hidden_attribute_desc,9991,HapHiddenAttributeDescRelationId)
 {
-	Oid			haprelid		BKI_LOOKUP(pg_class);
-	Oid			hapconfrelid	BKI_LOOKUP(pg_class);
+	Oid		haprelid		BKI_LOOKUP(pg_class);
+	Oid		hapconfrelid		BKI_LOOKUP(pg_class);
 	int16		hapstartbit;
 	int16		hapbitsize;
 	int16		hapdescid;
@@ -145,6 +145,20 @@ DECLARE_UNIQUE_INDEX_PKEY(pg_hap_hidden_attribute_desc_relid_descid,9989,HapHidd
 DECLARE_UNIQUE_INDEX(pg_hap_hidden_attribute_desc_relid_confrelid_confdescid,9990,HapHiddenAttributeDescRelidConfrelidConfdescidIndexId,on pg_hap_hidden_attribute_desc using btree(haprelid oid_ops, hapconfrelid oid_ops, hapconfdescid int2_ops));
 ```
 pg_hap_hidden_attribute_desc stores information about the encoded attributes for all tables. This includes not only the dimension tables that are the source of the encoding but also the lower-level tables that inherit the encoded attributes through foreign keys. For example, if *r_name* is encoded in the *region* table, the hidden attribute of *region* must know which bit position and how many bits it occupies. Similarly, the hidden attribute of *nation*, a child table of *region*, must also know the position and size of the bits where *r_name* is encoded within the *nation*'s hidden attribute. This catalog contains such information.
+
+```
+/* include/catalog/pg_hap_encoded_attribute.h */
+CATALOG(pg_hap_encoded_attribute,9988,HapEncodedAttributeRelationId)
+{
+	Oid		haprelid	BKI_LOOKUP(pg_class);
+	Oid		hapencodetable;
+	int16	hapattrnum;
+	int16	hapdescid;
+	int32	hapcardinality;
+} FormData_pg_hap_encoded_attribute;
+
+DECLARE_UNIQUE_INDEX_PKEY(pg_hap_encoded_attribute_relid_attrnum,9987,HapEncodedAttributeRelidAttrnumIndexId,on pg_hap_encoded_attribute using btree(haprelid oid_ops, hapattrnum int2_ops));
+```
 
 # Foriegn key check
 
