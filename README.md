@@ -200,7 +200,7 @@ The pg_hap_encoded_attribute catalog, unlike pg_hap_hidden_attribute_desc, conta
   prorettype => 'void', proargtypes => 'text anyarray int2',
   prosrc => 'hap_encode_to_hidden_attribute' }
 ```
-Now the metadata is ready, indicating where in the hidden attribute the encoded values should go. Before encoding, we also need to know the values of the attributes being encoded and their data types. The queries below handle this task. These queries are executed by hap_encode() before calling hap_encode_to_hidden_attribute().
+Now the metadata is ready, indicating where in the hidden attribute the encoded values should go. Before encoding, we also need to know the values of the attributes being encoded and their data types. The queries below, executed by hap_encode(), handle this task.
 
 ```
 SELECT array_cat(tmparray, array_agg((<attrname>))::text[])
