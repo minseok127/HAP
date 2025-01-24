@@ -55,6 +55,8 @@ The above pseudocode represents the creation of an HAP table. First the HAP acce
 
 # Encoding
 
+Encoding performs updates on all existing tuples. Therefore, it is recommended to execute encoding when only the tuples in the dimension tables exist, before generating data for the fact tables and running the OLTP workload.
+
 ### hap_encode()
 ```
 /* src/include/catalog/pg_proc.dat */
@@ -63,13 +65,11 @@ The above pseudocode represents the creation of an HAP table. First the HAP acce
   prorettype => 'text', proargtypes => 'text',
   prosrc => 'hap_encode' }
 ```
-
-Encoding is performed by calling the built-in function hap_encode(). The example below represents encoding the *r_name* attribute of the *region* table in the *public* namespace. Each piece of information is separated by a dot (.).
 ```
 > SELECT hap_encode('public.region.r_name');
 ```
+The example above represents encoding the *r_name* attribute of the *region* table in the *public* namespace. Each piece of information is separated by a dot (.). This built-in function internally executes the following query.
 
-This built-in function internally executes the following query.
 ```
 /* -------------
  * The encoding query
@@ -249,8 +249,6 @@ __hap_encode_to_hidden_attribute
 The pseudocode above illustrates the encoding process. It is divided into functions with the root keyword and those with the child keyword. Here, root refers to the table targeted by hap_encode(), while child refers to the descendant tables that reference the root table.
 
 The updates to the hidden attribute of the root table are based on the values and types of the encoded attributes identified earlier, generating an UPDATE query using a CASE WHEN statement. The updates for child tables are performed using an UPDATE query that joins with the parent table, applying CASE WHEN conditions based on the parent's hidden attribute and using foreign key match conditions to update the child's hidden attribute.
-
-Encoding performs updates on all existing tuples. Therefore, it is recommended to execute encoding when only the tuples in the dimension tables exist, before generating data for the fact tables and running the OLTP workload.
 
 # Foriegn key check
 
