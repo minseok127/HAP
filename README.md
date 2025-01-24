@@ -250,6 +250,8 @@ The pseudocode above illustrates the encoding process. It is divided into functi
 
 The updates to the hidden attribute of the root table are based on the values and types of the encoded attributes identified earlier, generating an UPDATE query using a CASE WHEN statement. The updates for child tables are performed using an UPDATE query that joins with the parent table, applying CASE WHEN conditions based on the parent's hidden attribute and using foreign key match conditions to update the child's hidden attribute.
 
+Encoding performs updates on all existing tuples. Therefore, it is recommended to execute encoding when only the tuples in the dimension tables exist, before generating data for the fact tables and running the OLTP workload.
+
 # Foriegn key check
 
 # Predicate pushdown
