@@ -215,7 +215,7 @@ FOREACH filter IN ARRAY tmparray LOOP
 				concat('''', filter, '''', ':'', valtype));
 END LOOP;
 ```
-Now the metadata is ready, indicating where in the hidden attribute the encoded values should go. We also need to know the values of the attributes being encoded and their data types. The above queries handle this task. These queries are executed by hap_encode().
+Now we know where the encoded values should go within the hidden attribute. We also need to know the values of the attributes being encoded and their data types. The above queries handle this task. These queries are executed by hap_encode().
 
 ```
 __hap_encode_to_hidden_attribute
@@ -246,6 +246,9 @@ __hap_encode_to_hidden_attribute
 		|
 		-- HapUpdateChildHiddenAttrRecures /* recursive */
 ```
+The pseudocode above illustrates the encoding process. It is divided into functions with the root keyword and those with the child keyword. Here, root refers to the table targeted by hap_encode(), while child refers to the descendant tables that reference the root table.
+
+The updates to the hidden attribute of the root table are based on the values and types of the encoded attributes identified earlier, generating an UPDATE query using a CASE WHEN statement. For child tables, their hidden attributes are updated using an UPDATE query that joins with the parent table. This UPDADATE uses the CASE WHEN statement for the parent's hidden attribute along with the foreign key match conditions.
 
 # Foriegn key check
 
