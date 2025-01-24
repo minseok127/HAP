@@ -217,6 +217,35 @@ FOREACH filter IN ARRAY tmparray LOOP
 				concat('''', filter, '''', ':'', valtype));
 END LOOP;
 ```
+```
+__hap_encode_to_hidden_attribute
+|
+-- HapUpdateRootHiddenAttr
+|	|
+|	-- HapMakeRootAttrFilterList
+|	|
+|	-- HapMakeCaseWhenSet
+|	|
+|	-- HapUpdateHiddenAttr
+|
+-- HapUpdateChildHiddenAttrRecurse
+	|
+	-- conrelOids = HapGetReferencingReldis
+	|
+	-- foreach conrelOids
+		|
+		-- HapUpdateChildHiddenAttr
+		|	|
+		|	-- HapMakeParentHiddenAttrFilterList
+		|	|
+		|	-- HapMakeCaseWhenSet
+		|	|
+		|	-- HapMakeFKeyCmpWhere
+		|	|
+		|	-- HapUpdateHiddenAttr
+		|
+		-- HapUpdateChildHiddenAttrRecures /* recursive */
+```
 
 # Foriegn key check
 
