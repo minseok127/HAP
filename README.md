@@ -55,7 +55,7 @@ The above pseudocode represents the creation of an HAP table. First the HAP acce
 
 # Encoding
 
-Encoding performs updates on all existing tuples. Therefore, it is recommended to execute encoding when only the tuples in the dimension tables exist, before generating data for the fact tables and running the OLTP workload.
+Encoding performs updates on all existing tuples. Therefore, it is recommended to encode when only the tuples in the dimension tables exist, before generating data for the fact tables and running the OLTP workload.
 
 ### 1. hap_encode()
 ```
