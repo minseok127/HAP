@@ -57,7 +57,7 @@ The above pseudocode represents the creation of an HAP table. First the HAP acce
 
 Encoding performs updates on all existing tuples. Therefore, it is recommended to execute encoding when only the tuples in the dimension tables exist, before generating data for the fact tables and running the OLTP workload.
 
-### hap_encode()
+### 1. hap_encode()
 ```
 /* src/include/catalog/pg_proc.dat */
 { oid => '4549', descr => 'encode attribute to hidden attribute and propagate it',
@@ -127,7 +127,7 @@ The example above represents encoding the *r_name* attribute of the *region* tab
 ```
 This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function hap_build_hidden_attribute_desc() to update catalogs. Finally, it calls the built-in function hap_encode_to_hidden_attribute() to add the encoded values into the hidden attribute.
 
-### hap_build_hidden_attribute_desc()
+### 2. hap_build_hidden_attribute_desc()
 ```
 /* src/include/catalog/pg_proc.dat */
 { oid => '4550', descr => 'build hidden attribute descriptor',
@@ -192,7 +192,7 @@ DECLARE_UNIQUE_INDEX_PKEY(pg_hap_encoded_attribute_relid_attrnum,9987,HapEncoded
 ```
 The pg_hap_encoded_attribute catalog, unlike pg_hap_hidden_attribute_desc, contains only one entry per attribute targeted by hap_encode(). In other words, it represents information about the table and attribute being encoded, not the descendant tables. It provides the necessary information to access the dictionary that maps the encoding values for the attribute.
 
-### hap_encode_to_hidden_attribute()
+### 3. hap_encode_to_hidden_attribute()
 ```
 /* src/include/catalog/pg_proc.dat */
 { oid => '4551', descr => 'encode specific value to hidden attribute and propagate it',
