@@ -215,7 +215,7 @@ FOREACH filter IN ARRAY tmparray LOOP
 				concat('''', filter, '''', ':'', valtype));
 END LOOP;
 ```
-Now we know where the encoded values should go within the hidden attribute. We also need to know the values of the attributes being encoded and their data types. The above queries handle this task. These queries are executed by hap_encode().
+Now we know where the encoded values should go within the hidden attribute, but we also need to know the values of the attributes being encoded and their data types before starting. The above queries handle this task. These queries are executed by hap_encode().
 
 ```
 __hap_encode_to_hidden_attribute
