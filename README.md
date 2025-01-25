@@ -248,7 +248,7 @@ __hap_encode_to_hidden_attribute
 ```
 The pseudocode above illustrates the encoding process. It is divided into functions with the root keyword and those with the child keyword. Here, root refers to the table targeted by hap_encode(), while child refers to the descendant tables that reference the root table.
 
-The updates to the hidden attribute of the root table are based on the values and types of the encoded attributes identified earlier, generating an UPDATE query using a CASE WHEN statement. The updates for child tables are performed using an UPDATE query that joins with the parent table, applying CASE WHEN conditions based on the parent's hidden attribute and using foreign key match conditions to update the child's hidden attribute.
+The updates to the hidden attribute of the root table are based on the values and types of the encoded attributes identified earlier, generating an UPDATE query using a CASE WHEN statement. The updates for child tables are performed using an UPDATE query that joins with the parent table, applying CASE WHEN conditions based on the parent's hidden attribute and using foreign key match conditions to update the child's hidden attribute. Such updates proceed recursively to descendant tables along the foreign key relationships.
 
 # Foriegn key check
 
