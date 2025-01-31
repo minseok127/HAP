@@ -280,6 +280,7 @@ HAP_HOOK(createForeignKeyCheckTriggers)
     |	 	|	-- fk_trigger->timing = TRIGGER_TYPE_BEFORE /* before trigger */
     |	 	|
     |	 	-- updateTrigger = HapCreateFKCheckTrigger(on_insert=false)
+    |		|	|
     |	 	|	-- fk_trigger->funcname = SystemFuncName("RI_FKey_check_upd")
     |	 	|	|
     |	 	|	-- fk_trigger->timing = TRIGGER_TYPE_AFTER
