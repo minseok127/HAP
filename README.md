@@ -270,33 +270,37 @@ HAP_HOOK(createForeignKeyCheckTriggers)
 -- HAP_HOOK_COND(createForeignKeyCheckTriggers)
     |
     -- if access method is hap
-    |    |
-    |	 -- insertTrigger = HapCreateFKCheckTrigger(on_insert=true)
-    |	 |	|
-    |	 |	-- fk_trigger->funcname = SystemFuncName("HAP_RI_FKey_check_before_ins")
-    |	 |	|
-    |	 |	-- fk_trigger->timing = TRIGGER_TYPE_BEFORE /* before trigger */
     |	 |
-    |	 -- updateTrigger = HapCreateFKCheckTrigger(on_insert=false)
-    |	 |	-- fk_trigger->funcname = SystemFuncName("RI_FKey_check_upd")
-    |	 |	|
-    |	 |	-- fk_trigger->timing = TRIGGER_TYPE_AFTER
-    |	 |
-    |	 -- HapInheritHiddenAttrDesc /* make new entries on pg_hap_hidden_attribute_desc */
+    |	 -- HAP_HOOK_BODY(createForeignKeyCheckTriggers)
+    |    	|
+    |	 	-- insertTrigger = HapCreateFKCheckTrigger(on_insert=true)
+    |	 	|	|
+    |	 	|	-- fk_trigger->funcname = SystemFuncName("HAP_RI_FKey_check_before_ins")
+    |	 	|	|
+    |	 	|	-- fk_trigger->timing = TRIGGER_TYPE_BEFORE /* before trigger */
+    |	 	|
+    |	 	-- updateTrigger = HapCreateFKCheckTrigger(on_insert=false)
+    |	 	|	-- fk_trigger->funcname = SystemFuncName("RI_FKey_check_upd")
+    |	 	|	|
+    |	 	|	-- fk_trigger->timing = TRIGGER_TYPE_AFTER
+    |	 	|
+    |	 	-- HapInheritHiddenAttrDesc /* make new entries on pg_hap_hidden_attribute_desc */
     |
     -- else
          |
-         -- insertTrigger = CreateFKCheckTrigger(on_insert=true)
-	 |	|
-	 |	-- fk_trigger->funcname = SystemFuncName("RI_FKey_check_ins")
-	 |	|
-	 |	-- fk_trigger->timing = TRIGGER_TYPE_AFTER
-	 |
-	 -- updateTrigger = CreateFKCheckTrigger(on_insert=false)
+	 -- Original function
 		|
-		-- fk_trigger->funcname = SystemFuncName("RI_FKey_check_upd")
-		|
-		-- fk_trigger->timing = TRIGGER_TYPE_AFTER
+         	-- insertTrigger = CreateFKCheckTrigger(on_insert=true)
+	 	|	|
+	 	|	-- fk_trigger->funcname = SystemFuncName("RI_FKey_check_ins")
+	 	|	|
+	 	|	-- fk_trigger->timing = TRIGGER_TYPE_AFTER
+	 	|
+	 	-- updateTrigger = CreateFKCheckTrigger(on_insert=false)
+			|
+			-- fk_trigger->funcname = SystemFuncName("RI_FKey_check_upd")
+			|
+			-- fk_trigger->timing = TRIGGER_TYPE_AFTER
 ```
 
 # Predicate pushdown
