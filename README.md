@@ -304,11 +304,7 @@ HAP_HOOK(createForeignKeyCheckTriggers)
 			-- fk_trigger->timing = TRIGGER_TYPE_AFTER
 ```
 
-There are two main changes. First, the function of insert trigger is changed to HAP_RI_FKey_check_before_ins, and it is set as a BEFORE trigger instead of an AFTER trigger. This ensures that the encoded values for the hidden attribute are determined before the insert is executed. Second, HapInheritHiddenAttrDesc is called to add new entries to pg_hap_hidden_attribute_desc. This allows tables that did not exist during the encoding process to have the necessary metadata for hidden attributes.
-
-One thing to note is that changing the insert trigger to a before trigger can make the following situation:
-```
-```
+There are two main changes. First, the function of insert trigger is changed to HAP_RI_FKey_check_before_ins, and it is set as a BEFORE trigger instead of an AFTER trigger. This ensures that the encoded values for the hidden attribute are determined before the insert is executed. Second, HapInheritHiddenAttrDesc is called to add new entries to pg_hap_hidden_attribute_desc. This allows tables that did not exist during the encoding process to have the necessary metadata for hidden attributes. One thing to note is that the foreign key check explicitly locks the parent row using SELECT ... FOR KEY SHARE, preventing other transactions from deleting or modifying the PK even if changes are made in a BEFORE trigger.
 
 # Predicate pushdown
 
