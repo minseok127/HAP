@@ -306,7 +306,7 @@ HAP_HOOK(createForeignKeyCheckTriggers)
 
 There are two main changes:
 
-First, the function of the insert trigger is changed to HAP_RI_FKey_check_before_ins, and it is set as a BEFORE trigger instead of an AFTER trigger. This ensures that the encoded values for the hidden attribute are determined before the heap_insert. One thing to note is that the foreign key check explicitly locks the parent row using SELECT ... FOR KEY SHARE, preventing other transactions from deleting or modifying the PK after the BEFORE trigger has been successed.
+First, the function of the insert trigger is changed to HAP_RI_FKey_check_before_ins, and it is set as a BEFORE trigger instead of an AFTER trigger. This ensures that the encoded values for the hidden attribute are determined before the heap_insert. One thing to note is that the foreign key check explicitly locks the parent row using SELECT ... FOR KEY SHARE, preventing other transactions from deleting or modifying the PK after the BEFORE trigger has been successed.
 
 Second, HapInheritHiddenAttrDesc is called to add new entries to pg_hap_hidden_attribute_desc. This allows tables that did not exist during the encoding process to have the metadata that determines where the encoded values should be placed within the hidden attribute and how many bits they occupy.
 
