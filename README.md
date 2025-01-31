@@ -51,6 +51,7 @@ DECLARE_UNIQUE_INDEX_PKEY(pg_hap_haprelid_index,9998,HapRelIdIndexId,on pg_hap u
 
 DECLARE_UNIQUE_INDEX(pg_hap_haprelname_nsp_index,9997,HapNameNspIndexId,on pg_hap using btree(haprelname name_ops, haprelnamespace oid_ops));
 ```
+
 The above pseudocode represents the creation of an HAP table. First the HAP access method must be registered. This access method will triggers the DefineRelation function to hook into HAP's logic. At this hook function, a hidden attribute is added as the last attribute of the table, and the table is registered in the pg_hap catalog. This catalog records the total bit size of the hidden attribute (hapbitsize) and how many attributes are encoded in the hidden attribute (hapdesccount). This information is aggregated by checking the pg_hap entries of the parent tables referenced by the new table.
 
 # Encoding
@@ -58,6 +59,7 @@ The above pseudocode represents the creation of an HAP table. First the HAP acce
 Encoding performs updates on all existing tuples. Therefore, it is recommended to encode when only the tuples in the dimension tables exist, before generating data for the fact tables and running the OLTP workload.
 
 ### 1. hap_encode()
+
 ```
 /* src/include/catalog/pg_proc.dat */
 { oid => '4549', descr => 'encode attribute to hidden attribute and propagate it',
@@ -68,6 +70,7 @@ Encoding performs updates on all existing tuples. Therefore, it is recommended t
 ```
 > SELECT hap_encode('public.region.r_name');
 ```
+
 The example above represents encoding the *r_name* attribute of the *region* table in the *public* namespace. Each piece of information is separated by a dot (.). This built-in function internally executes the following query.
 
 ```
@@ -125,9 +128,11 @@ The example above represents encoding the *r_name* attribute of the *region* tab
  * -------------
  */
 ```
+
 This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function hap_build_hidden_attribute_desc() to update catalogs. Finally, it calls the built-in function hap_encode_to_hidden_attribute() to add the encoded values into the hidden attribute.
 
 ### 2. hap_build_hidden_attribute_desc()
+
 ```
 /* src/include/catalog/pg_proc.dat */
 { oid => '4550', descr => 'build hidden attribute descriptor',
@@ -175,6 +180,7 @@ HapInsertHiddenAttrDesc
 		-- HapPropagateHiddenAttrDesc /* recursive */
 
 ```
+
 The pg_hap_hidden_attribute_desc catalog stores information about the encoded attributes for all tables. This includes not only the dimension tables that are the source of the encoding but also the lower-level tables that inherit the encoded attributes through foreign keys. For example, if *r_name* is encoded in the *region* table, the hidden attribute of *region* must know which bit position and how many bits are used for *r_name*. Similarly, the hidden attribute of *nation*, a child table of *region*, must also know the position and size of the bits where *r_name* is encoded within the *nation*'s hidden attribute. The pseudocode above illustrates this recursive process.
 
 ```
@@ -190,9 +196,11 @@ CATALOG(pg_hap_encoded_attribute,9988,HapEncodedAttributeRelationId)
 
 DECLARE_UNIQUE_INDEX_PKEY(pg_hap_encoded_attribute_relid_attrnum,9987,HapEncodedAttributeRelidAttrnumIndexId,on pg_hap_encoded_attribute using btree(haprelid oid_ops, hapattrnum int2_ops));
 ```
+
 The pg_hap_encoded_attribute catalog, unlike pg_hap_hidden_attribute_desc, contains only one entry per attribute targeted by hap_encode(). In other words, it represents information about the table and attribute being encoded, not the descendant tables. It provides the necessary information to access the dictionary that maps the encoding values for the attribute.
 
 ### 3. hap_encode_to_hidden_attribute()
+
 ```
 /* src/include/catalog/pg_proc.dat */
 { oid => '4551', descr => 'encode specific value to hidden attribute and propagate it',
@@ -215,6 +223,7 @@ FOREACH filter IN ARRAY tmparray LOOP
 				concat('''', filter, '''', ':'', valtype));
 END LOOP;
 ```
+
 Now we know where the encoded values should go within the hidden attribute, but we also need to know the values of the attributes being encoded and their data types before starting. The above queries handle this task. These queries are executed by hap_encode().
 
 ```
@@ -246,11 +255,49 @@ __hap_encode_to_hidden_attribute
 		|
 		-- HapUpdateChildHiddenAttrRecures /* recursive */
 ```
+
 The pseudocode above illustrates the encoding process. It is divided into functions with the root keyword and those with the child keyword. Here, root refers to the table targeted by hap_encode(), while child refers to the descendant tables that reference the root table.
 
 The updates to the hidden attribute of the root table are based on the values and types of the encoded attributes identified earlier, generating an UPDATE query using a CASE WHEN statement. The updates for child tables are performed using an UPDATE query that joins with the parent table, applying CASE WHEN conditions based on the parent's hidden attribute and using foreign key match conditions to update the child's hidden attribute. Such updates proceed recursively to descendant tables along the foreign key relationships.
 
 # Foriegn key check
+
+After completing the encoding process, new tuples inherit encoded values through foreign key checks on the parent tables instead of performing joins with ancestor tables. To enable this, the foreign key check function must be replaced with HAP's foreign key check function. The pseudocode below defines a function that creates triggers related to foreign key constraints during the table creation. This function uses HAP_HOOK and, if the table uses the HAP access method, it is hooked into HAP's logic.
+
+```
+HAP_HOOK(createForeignKeyCheckTriggers)
+|
+-- HAP_HOOK_COND(createForeignKeyCheckTriggers)
+    |
+    -- if access method is hap
+    |    |
+    |	 -- insertTrigger = HapCreateFKCheckTrigger(on_insert=true)
+    |	 |	|
+    |	 |	-- fk_trigger->funcname = SystemFuncName("HAP_RI_FKey_check_before_ins")
+    |	 |	|
+    |	 |	-- fk_trigger->timing = TRIGGER_TYPE_BEFORE /* before trigger */
+    |	 |
+    |	 -- updateTrigger = HapCreateFKCheckTrigger(on_insert=false)
+    |	 |	-- fk_trigger->funcname = SystemFuncName("RI_FKey_check_upd")
+    |	 |	|
+    |	 |	-- fk_trigger->timing = TRIGGER_TYPE_AFTER
+    |	 |
+    |	 -- HapInheritHiddenAttrDesc /* make new entries on pg_hap_hidden_attribute_desc */
+    |
+    -- else
+         |
+         -- insertTrigger = CreateFKCheckTrigger(on_insert=true)
+	 |	|
+	 |	-- fk_trigger->funcname = SystemFuncName("RI_FKey_check_ins")
+	 |	|
+	 |	-- fk_trigger->timing = TRIGGER_TYPE_AFTER
+	 |
+	 -- updateTrigger = CreateFKCheckTrigger(on_insert=false)
+		|
+		-- fk_trigger->funcname = SystemFuncName("RI_FKey_check_upd")
+		|
+		-- fk_trigger->timing = TRIGGER_TYPE_AFTER
+```
 
 # Predicate pushdown
 
