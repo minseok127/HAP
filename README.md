@@ -262,7 +262,7 @@ The updates to the hidden attribute of the root table are based on the values an
 
 # Foriegn key check
 
-After completing the encoding process, new tuples inherit encoded values through foreign key checks on the parent tables instead of performing joins with ancestor tables. To enable this, the foreign key check function must be replaced with HAP's foreign key check function. The pseudocode below defines a function that creates triggers related to foreign key constraints during the table creation. This function uses HAP_HOOK and, if the table uses the HAP access method, it is hooked into HAP's logic.
+After completing the encoding process, new tuples inherit encoded values through foreign key checks instead of performing joins with ancestor tables. To enable this, the foreign key check function must be replaced with HAP's foreign key check function. The pseudocode below defines a function that creates triggers related to foreign key constraints during the table creation. This function uses HAP_HOOK and, if the table uses the HAP access method, it is hooked into HAP's logic.
 
 ```
 HAP_HOOK(createForeignKeyCheckTriggers)
