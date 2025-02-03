@@ -265,6 +265,13 @@ The updates to the hidden attribute of the root table are based on the values an
 After completing the encoding process, new tuples inherit encoded values through foreign key checks instead of performing joins with ancestor tables. To enable this, the foreign key check function must be replaced with HAP's function. The pseudocode below defines a function that creates triggers related to foreign key constraints during the table creation. This function uses HAP_HOOK and, if the table uses the HAP access method, it is hooked into HAP's logic.
 
 ```
+/* src/include/catalog/pg_proc.dat */
+{ oid => '1568', descr => 'referential integrity FOREIGN KEY ... REFERENCES',
+  proname => 'HAP_RI_FKey_check_before_ins', provolatile => 'v',
+  prorettype => 'trigger', proargtypes => '',
+  prosrc => 'HAP_RI_FKey_check_before_ins' },
+```
+```
 HAP_HOOK(createForeignKeyCheckTriggers)
 |
 -- HAP_HOOK_COND(createForeignKeyCheckTriggers)
@@ -311,20 +318,13 @@ First, the function of the insert trigger is changed to HAP_RI_FKey_check_before
 Second, HapInheritHiddenAttrDesc is called to add new entries to pg_hap_hidden_attribute_desc. This allows tables that did not exist during the encoding process to have the metadata that determines where the encoded values should be placed within the hidden attribute and how many bits they occupy.
 
 ```
-/* src/include/catalog/pg_proc.dat */
-{ oid => '1568', descr => 'referential integrity FOREIGN KEY ... REFERENCES',
-  proname => 'HAP_RI_FKey_check_before_ins', provolatile => 'v',
-  prorettype => 'trigger', proargtypes => '',
-  prosrc => 'HAP_RI_FKey_check_before_ins' },
-```
-```
 HAP_HOOK(ExecModifyTable)
 |
 -- HAP_HOOK_COND(ExecModifyTable)
 	|
     	-- if access method is hap
 	|    |
-	|    --  if the operation is INSERT
+	|    -- if the operation is INSERT
 	|    	|
 	|    	-- HapGetInsertNewTuple /* reallocate hidden attribute */
 	|    	|
@@ -354,6 +354,10 @@ HAP_HOOK(ExecModifyTable)
 			|
 			-- ExecInsert
 ```
+
+The pseudocode above represents the actual insert process for an HAP table. HAP_HOOK is used into ExecModifyTable, and in the insert case, ExecGetInsertNewTuple and ExecInsert are replaced with HapGetInsertNewTuple and HapExecInsert.
+
+Since the user does not explicitly specify hidden attribute values in the insert query, the hidden attribute only has an array header (0byte for values). HapGetInsertNewTuple retrieves the actual size of the hidden attribute from pg_hap and reallocates the hidden attribute.
 
 # Predicate pushdown
 
