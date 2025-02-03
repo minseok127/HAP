@@ -260,7 +260,7 @@ The pseudocode above illustrates the encoding process. It is divided into functi
 
 The updates to the hidden attribute of the root table are based on the values and types of the encoded attributes identified earlier, generating an UPDATE query using a CASE WHEN statement. The updates for child tables are performed using an UPDATE query that joins with the parent table, applying CASE WHEN conditions based on the parent's hidden attribute and using foreign key match conditions to update the child's hidden attribute. Such updates proceed recursively to descendant tables along the foreign key relationships.
 
-# Foriegn key check
+# Insert
 
 After completing the encoding process, new tuples inherit encoded values through foreign key checks instead of performing joins with ancestor tables. To enable this, the foreign key check function must be replaced with HAP's function. The pseudocode below defines a function that creates triggers related to foreign key constraints during the table creation. This function uses HAP_HOOK and, if the table uses the HAP access method, it is hooked into HAP's logic.
 
