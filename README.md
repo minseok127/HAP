@@ -359,6 +359,8 @@ The pseudocode above represents the actual insert process for an HAP table. HAP_
 
 Since the user does not explicitly specify hidden attribute values in the insert query, the hidden attribute only has an array header (0byte for values). HapGetInsertNewTuple retrieves the actual size of the hidden attribute from pg_hap and reallocates the hidden attribute.
 
+HapExecInsert calls HapExecForeignKeyCheckTriggers and HapBuildHiddenAttr before heap_insert. In HapExecForeignKeyCheckTriggers, foreign key checks are performed on the parent tables. During this process, HAP_RI_FKey_check_before_ins is called to retrieve the hidden attribute from the parent tuple. The retrieved values are then processed by HapDeconstructParentHiddenAttr, which prepares the mapping information needed to apply them to the child tuple's hidden attribute. Once all parent tuples have been checked, HapBuildHiddenAttr is called. This function uses the mapping table created by HapDeconstructParentHiddenAttr to fill the child tuple's hidden attribute with the actual encoded values.
+
 # Predicate pushdown
 
 # Partition map
