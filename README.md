@@ -310,6 +310,51 @@ First, the function of the insert trigger is changed to HAP_RI_FKey_check_before
 
 Second, HapInheritHiddenAttrDesc is called to add new entries to pg_hap_hidden_attribute_desc. This allows tables that did not exist during the encoding process to have the metadata that determines where the encoded values should be placed within the hidden attribute and how many bits they occupy.
 
+```
+/* src/include/catalog/pg_proc.dat */
+{ oid => '1568', descr => 'referential integrity FOREIGN KEY ... REFERENCES',
+  proname => 'HAP_RI_FKey_check_before_ins', provolatile => 'v',
+  prorettype => 'trigger', proargtypes => '',
+  prosrc => 'HAP_RI_FKey_check_before_ins' },
+```
+```
+HAP_HOOK(ExecModifyTable)
+|
+-- HAP_HOOK_COND(ExecModifyTable)
+	|
+    	-- if access method is hap
+	|    |
+	|    --  if the operation is INSERT
+	|    	|
+	|    	-- HapGetInsertNewTuple /* reallocate hidden attribute */
+	|    	|
+	|    	-- HapExecInsert
+	|		|
+	|		-- HapExecForeignKeyCheckTriggers
+	|		|	|
+	|		|	-- foreach FKey check
+	|		|		|
+	|		|		-- parent_hidden_attribute = ExecCallTriggerFunc
+	|		|		|	|
+	|		|		|	-- HAP_RI_FKey_check_before_ins
+	|		|		|
+	|		|		-- HapDeconstructParentHiddenAttr
+	|		|
+	|		-- HapBuildHiddenAttr
+	|		|
+	|		-- table_tuple_insert
+	|
+	-- else
+	    |
+	    -- Original ExecModifyTable
+		|
+		-- if the operation is INSERT
+			|
+			-- ExecGetInsertNewTuple
+			|
+			-- ExecInsert
+```
+
 # Predicate pushdown
 
 # Partition map
