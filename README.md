@@ -376,7 +376,19 @@ HAP_HOOK(query_planner)
 	|
 	-- if query is SELECT and enable_hap_planner is true
 	|   |
-	|   --
+	|   -- ... /* original query_planner's functions */
+	|   |
+	|   -- hap_planner
+	|   |	|
+	|   |	-- hap_check_dimension_table_existence
+	|   |	|
+	|   |	-- hap_propagate_hidden_attribute
+	|   |		|
+	|   |		-- hap_find_propagation_paths
+	|   |		|
+	|   |		-- hap_propagate_filter_predicates
+	|   |
+	|   -- ... /* original query_planner's functions */
 	|
 	-- else
 	    |
