@@ -395,6 +395,6 @@ HAP_HOOK(query_planner)
 	    -- Original query_planner
 ```
 
-At the point when hap_planner is called, all possible subqueries have been merged into the main query, and predicates have been distributed across the all tables. The first task of the hap_planner is checking whether any dimension tables targeted for encoding exist and whether there are predicates on attributes encoded with hap_encode. If no dimension table is present or there are no predicates that can be transformed into hidden attributes, it skips hap_propagate_filter_predicates.
+At the point when hap_planner is called, all possible subqueries have been merged into the main query, and predicates have been distributed across the all tables. The first task of the hap_planner is checking whether any dimension tables targeted for encoding exist and whether there are predicates on attributes encoded with hap_encode. If no dimension table is present or there are no predicates that can be transformed into hidden attributes, it skips hap_propagate_filter_predicates.
 
 # Partition map
