@@ -6,7 +6,7 @@ Attributes are encoded using dictionary encoding and bit-packing. The dictionary
 
 This repository archives the HAP module, extracted from the [LOCATOR](https://github.com/snu-dbxlab/LOCATOR) project. The module is located in src/backend/hap, and modifications to existing PostgreSQL functions are marked with the HAP_HOOK keyword and #ifdef HAP. The name HAP is an abbreviation of Hidden Attribute Partitioning, but partitioning is not enforced. In fact, partitioning is handled by LOCATOR's logic, not HAP.
 
-This README explains implementation details of HAP. It is divided into five main categories: (1) creating HAP tables, (2) encoding hidden attribute, (3) retrieving encoded values during the insert process, (4) pushing down predicates on ancestor tables to hidden attributes in child tables, (5) the techniques used in the LOCATOR project to find partitions matching the predicates.
+This README explains implementation details of HAP. It is divided into five main categories: (1) creating HAP tables, (2) encoding hidden attribute, (3) retrieving encoded values during the insert process, (4) propagating predicates on ancestor tables to hidden attributes in child tables, (5) the techniques used in the LOCATOR project to find partitions matching the predicates.
 
 # CREATE TABLE
 
@@ -361,7 +361,7 @@ Since the user does not explicitly specify hidden attribute values in the insert
 
 HapExecInsert calls HapExecForeignKeyCheckTriggers and HapBuildHiddenAttr before heap_insert. HapExecForeignKeyCheckTriggers performs foreign key checks on parent tables, calling the trigger function HAP_RI_FKey_check_before_ins, which returns the hidden attribute of the parent tuple. It then calls HapDeconstructParentHiddenAttr to create a mapping table that links the parent's hidden attribute to the child's hidden attribute. After all parent tuples are checked, HapBuildHiddenAttr populates the child tuple's hidden attribute using the mapping table.
 
-# Predicate pushdown
+# Predicate transformation and propagation
 
 To transform predicates on ancestor tables into predicates on hidden attributes of descendant tables, a HAP_HOOK is placed in the query_planner function. If the query is a SELECT and enable_hap_planner is ON, HAP's logic is applied. The enable_hap_planner setting can be toggled using SET and defaults to true.
 
