@@ -363,7 +363,7 @@ HapExecInsert calls HapExecForeignKeyCheckTriggers and HapBuildHiddenAttr before
 
 # Predicate pushdown
 
-To transform predicates on ancestor tables into predicates on hidden attributes of descendant tables, a HAP_HOOK is placed in the query_planner function. If the query is a SELECT statement and enable_hap_planner is ON, HAP's logic is applied. The enable_hap_planner setting can be toggled using SET and defaults to true.
+To transform predicates on ancestor tables into predicates on hidden attributes of descendant tables, a HAP_HOOK is placed in the query_planner function. If the query is a SELECT and enable_hap_planner is ON, HAP's logic is applied. The enable_hap_planner setting can be toggled using SET and defaults to true.
 
 ```
 > SET enable_hap_planner = on;
