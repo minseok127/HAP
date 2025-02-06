@@ -387,10 +387,6 @@ HAP_HOOK(query_planner)
 	|   |		-- hap_find_propagation_paths
 	|   |		|
 	|   |		-- hap_propagate_filter_predicates
-	|   |			|
-	|   |			-- hap_find_propagation_paths
-	|   |			|
-	|   |			-- hap_propagate_filter_predicates
 	|   |
 	|   -- ... /* original query_planner's functions */
 	|
