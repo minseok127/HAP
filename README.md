@@ -422,4 +422,34 @@ hap_propagate_hidden_attribute
 ```
 In hap_propagate_hidden_attribute, hap_find_propagation_paths is called to determine the propagation path of hidden attribute predicates. It iterates through all tables in the query, and if a table is an HAP table, it populates the HapPropagateCond and HapPropagatePath data structures for foreign key constraints where the table is a child. The propagation path is traced from the descendant table back to the ancestor table in the hap_find_propagation_paths_for_rel (cachedfkeys contains foreign keys where the target relation is the child table).
 
+```
+/*
+ * HapPropagatePath - The path of hidden attribute propagation.
+ *
+ * - rel_oid_list: Relation oids passed through in the propagation.
+ * - target_rel_idx: Target RelOptInfo index to be propagated to.
+ */
+typedef struct HapPropagatePath
+{
+	List *rel_oid_list;
+	Index target_rel_idx;
+} HapPropagatePath;
+
+/*
+ * HapPropagateCond - Condition to determine whether or not to propagate.
+ *
+ * - ancestor_key: Foreign key attributes of propagating relation.
+ * - descendant_key: Foreign key attributes of target relation.
+ * - valid_keys: Bitmap indicating valid attributes in the key arrays.
+ * - nkeys: Size of the key arrays.
+ */
+typedef struct HapPropagateCond
+{
+	AttrNumber ancestor_key[INDEX_MAX_KEYS];
+	AttrNumber descendant_key[INDEX_MAX_KEYS];
+	Bitmapset *valid_keys;
+	int nkeys;
+} HapPropagateCond;
+```
+
 # Partition map
