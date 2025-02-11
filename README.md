@@ -420,5 +420,6 @@ hap_propagate_hidden_attribute
 				|
 				-- hap_recurse_fkey_to_find_implicit_paths
 ```
+In hap_propagate_hidden_attribute, hap_find_propagation_paths is called to determine the propagation path of hidden attribute predicates. It iterates through all tables in the query, and if a table is an HAP table, it populates the HapPropagateCond and HapPropagatePath data structures for foreign key constraints where the table is a child. The propagation path is traced from the descendant table back to the ancestor table.
 
 # Partition map
