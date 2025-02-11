@@ -397,4 +397,28 @@ HAP_HOOK(query_planner)
 
 At the point when hap_planner is called, all possible subqueries have been merged into the main query, and the basic predicates have been distributed across the all tables. The first task of the hap_planner is checking whether any dimension tables targeted for encoding exist and whether there are predicates on attributes encoded with hap_encode. If no dimension table is present or there are no predicates that can be transformed into hidden attributes, it skips hap_propagate_hidden_attribute.
 
+```
+hap_propagate_hidden_attribute
+|
+-- hap_find_propagation_paths
+	|
+	-- foreach PlannerInfo->simple_rel_array
+		|
+		-- if the relation is not HAP
+		|	|
+		|	-- continue
+		|
+		-- hap_find_propagation_paths_for_rel
+			|
+			-- cachedfkeys = RelationGetFKeyList /* Foreign key constraint list where this table is the child */
+			|
+			-- foreach cachedfkeys
+				|
+				-- hap_init_propagation_path_search
+				|
+				-- hap_try_set_propagate_paths
+				|
+				-- hap_recurse_fkey_to_find_implicit_paths
+```
+
 # Partition map
