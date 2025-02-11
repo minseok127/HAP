@@ -171,7 +171,7 @@ HapInsertHiddenAttrDesc
 	|
 	-- conrelOids = HapGetReferencingRelIds
 	|
-	-- foreach conrelOids
+	-- foreach conrelOids /* In PostgreSQL, conrel refers to the child table, while confrel refers to the parent table */
 		|
 		-- HapPrepareNewHiddenAttrDesc
 		|
