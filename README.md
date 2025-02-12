@@ -363,7 +363,7 @@ HapExecInsert calls HapExecForeignKeyCheckTriggers and HapBuildHiddenAttr before
 
 # Predicate transformation and propagation
 
-To transform predicates on ancestor tables into predicates on hidden attributes of descendant tables, a HAP_HOOK is placed in the query_planner function. If the query is a SELECT and enable_hap_planner is ON, HAP's logic is applied. The enable_hap_planner setting can be toggled using SET and defaults to true.
+To transform predicates on ancestor tables into predicates on hidden attributes of descendant tables, a HAP_HOOK is used for the query_planner(). If the query is a SELECT and enable_hap_planner is ON, HAP's logic is applied. The enable_hap_planner setting can be toggled using SET and defaults to true.
 
 ```
 > SET enable_hap_planner = on;
@@ -395,7 +395,7 @@ HAP_HOOK(query_planner)
 	    -- Original query_planner
 ```
 
-At the point when hap_planner is called, all possible subqueries have been merged into the main query, and the basic predicates have been distributed across the all tables. The first task of the hap_planner is checking whether any dimension tables targeted for encoding exist and whether there are predicates on attributes encoded with hap_encode. If no dimension table is present or there are no predicates that can be transformed into hidden attributes, it skips hap_propagate_hidden_attribute.
+Before the hap_planner() is called, all possible subqueries have been merged into the main query, and the basic predicates have been distributed across the all tables. The first task of the hap_planner is checking whether any dimension tables targeted for encoding exist and whether there are predicates on attributes encoded with hap_encode. If no dimension table is present or there are no predicates that can be transformed into hidden attributes, it skips hap_propagate_hidden_attribute.
 
 ```
 hap_propagate_hidden_attribute
