@@ -1,6 +1,6 @@
 # HAP
 
-This repository archives the HAP module, extracted from the TRACER project. The module is located in `src/backend/hap`, and modifications to existing PostgreSQL functions are marked with the `HAP_HOOK` keyword and `#ifdef HAP`. The name HAP is an abbreviation of Hidden Attribute Partitioning, but partitioning is not enforced. In fact, partitioning is handled by TRACER's logic, not HAP.
+This repository archives the HAP module, extracted from the TRACER-ETL project. The module is located in `src/backend/hap`, and modifications to existing PostgreSQL functions are marked with the `HAP_HOOK` keyword and `#ifdef HAP`. The name HAP is an abbreviation of Hidden Attribute Partitioning, but partitioning is not enforced. In fact, partitioning is handled by TRACER's logic, not HAP.
 
 This README explains implementation details of HAP. It is divided into five main categories: (1) creating HAP tables, (2) encoding hidden attribute, (3) retrieving encoded values during the insert process, (4) converting predicates on ancestor tables into predicates on hidden attributes in descendant tables.
 
