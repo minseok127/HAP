@@ -1,12 +1,14 @@
 # HAP
 
-Hidden attribute contains encoded values of ancestor tables' attributes in a foreign key relationship. When a new tuple is inserted into the child table it receives the encoded values from its parent tuples through foreign key checks and appends them at the end of the child tuple. Parent tuples themselves may have obtained encoded values from their own parent tuples. So the child don't have to perform joins across all ancestor tables to retrieve these values during the insert operation. Hidden attribute allows predicates on ancestor tables to be converted into predicates on descendant tables. This reduces the total number of tuples processed by the query because the tuples are filtered before the join, not during the join.
-
-Attributes are encoded using dictionary encoding and bit-packing. The dictionary is created as a PostgreSQL-style table during the encoding process for the dimension table, with the attribute values of the dimension table becoming entries in the dictionary. These entries are stored in the hidden attribute, a variable-length byte array where the dictionary's entry IDs are bit-packed for efficient storage.
-
 This repository archives the HAP module, extracted from the [LOCATOR](https://github.com/snu-dbxlab/LOCATOR) project. The module is located in `src/backend/hap`, and modifications to existing PostgreSQL functions are marked with the `HAP_HOOK` keyword and `#ifdef HAP`. The name HAP is an abbreviation of Hidden Attribute Partitioning, but partitioning is not enforced. In fact, partitioning is handled by LOCATOR's logic, not HAP.
 
 This README explains implementation details of HAP. It is divided into five main categories: (1) creating HAP tables, (2) encoding hidden attribute, (3) retrieving encoded values during the insert process, (4) converting predicates on ancestor tables into predicates on hidden attributes in descendant tables, (5) the techniques used in the LOCATOR project to find partitions matching the predicates.
+
+# Hidden Attribute
+
+Hidden attribute contains encoded values of ancestor tables' attributes in a foreign key relationship. When a new tuple is inserted into the child table it receives the encoded values from its parent tuples through foreign key checks and appends them at the end of the child tuple. Parent tuples themselves may have obtained encoded values from their own parent tuples. So the child don't have to perform joins across all ancestor tables to retrieve these values during the insert operation. Hidden attribute allows predicates on ancestor tables to be converted into predicates on descendant tables. This reduces the total number of tuples processed by the query because the tuples are filtered before the join, not during the join.
+
+Attributes are encoded using dictionary encoding and bit-packing. The dictionary is created as a PostgreSQL-style table during the encoding process for the dimension table, with the attribute values of the dimension table becoming entries in the dictionary. These entries are stored in the hidden attribute, a variable-length byte array where the dictionary's entry IDs are bit-packed for efficient storage.
 
 # CREATE TABLE
 
