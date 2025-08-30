@@ -58,7 +58,7 @@ The above pseudocode represents the creation of an HAP table. First the HAP acce
 
 Encoding performs updates on all existing tuples. Therefore, it is recommended to encode when only the tuples in the dimension tables exist, before generating data for the fact tables and running the OLTP workload.
 
-### 1. hap_encode()
+### 1. `hap_encode()`
 
 ```
 /* src/include/catalog/pg_proc.dat */
@@ -131,7 +131,7 @@ The example above represents encoding the *r_name* attribute of the *region* tab
 
 This query performs three operations. First, it identifies the distinct values of the attribute being encoded and generates a materialized view that assigns IDs to those values. Second, it calculates the cardinality of the encoded values and calls the built-in function `hap_build_hidden_attribute_desc()` to update catalogs. Finally, it calls the built-in function `hap_encode_to_hidden_attribute()` to add the encoded values into the hidden attribute.
 
-### 2. hap_build_hidden_attribute_desc()
+### 2. `hap_build_hidden_attribute_desc()`
 
 ```
 /* src/include/catalog/pg_proc.dat */
@@ -199,7 +199,7 @@ DECLARE_UNIQUE_INDEX_PKEY(pg_hap_encoded_attribute_relid_attrnum,9987,HapEncoded
 
 The `pg_hap_encoded_attribute` catalog, unlike `pg_hap_hidden_attribute_desc`, contains only one entry per attribute targeted by `hap_encode()`. In other words, it represents information about the table and attribute being encoded, not the descendant tables. It provides the necessary information to access the dictionary that maps the encoding values for the attribute.
 
-### 3. hap_encode_to_hidden_attribute()
+### 3. `hap_encode_to_hidden_attribute()`
 
 ```
 /* src/include/catalog/pg_proc.dat */
@@ -363,7 +363,7 @@ Since the user does not explicitly specify hidden attribute values in the insert
 
 # Predicate Transformation and Propagation
 
-To transform predicates on ancestor tables into predicates on hidden attributes of descendant tables, a `HAP_HOOK` is used for the `query_planner()`. If the query is a SELECT and `enable_hap_planner` is ON, HAP's logic is applied. The enable_hap_planner setting can be toggled using SET and defaults to true.
+To transform predicates on ancestor tables into predicates on hidden attributes of descendant tables, a `HAP_HOOK` is used for the `query_planner()`. If the query is a SELECT and `enable_hap_planner` is ON, HAP's logic is applied. The `enable_hap_planner` setting can be toggled using SET and defaults to true.
 
 ```
 > SET enable_hap_planner = on;
@@ -395,61 +395,103 @@ HAP_HOOK(query_planner)
 	    -- Original query_planner
 ```
 
-Before the `hap_planner()` is called, all possible subqueries have been merged into the main query, and the basic predicates have been distributed across the all tables. The first task of the hap_planner is checking whether any dimension tables targeted for encoding exist and whether there are predicates on attributes encoded with `hap_encode()`. If no dimension table is present or there are no predicates that can be transformed into hidden attributes, it skips `hap_propagate_hidden_attribute()`.
+Before the `hap_planner()` is called, all possible subqueries have been merged into the main query, and the basic predicates have been distributed across the all tables. The `hap_planner()` first checks for the existence of encoded dimension tables with relevant predicates using `hap_check_dimension_table_existence()`. If found, it proceeds with `hap_propagate_hidden_attribute()`, which is the core of this functionality. This process is divided into two main stages: finding propagation paths and then propagating the filter predicates along those paths.
+
+### 1. Finding Propagation Paths (`hap_find_propagation_paths`)
+
+This is the initial stage where HAP discovers all possible routes a predicate can travel from an ancestor (dimension) table to descendant (fact) tables through foreign key relationships.
 
 ```
-hap_propagate_hidden_attribute
+hap_find_propagation_paths
 |
--- hap_find_propagation_paths
-	|
-	-- foreach PlannerInfo->simple_rel_array
-		|
-		-- if the relation is not HAP
-		|	|
-		|	-- continue
-		|
-		-- hap_find_propagation_paths_for_rel
-			|
-			-- cachedfkeys = RelationGetFKeyList /* Foreign key constraint list where this table is the child */
-			|
-			-- foreach cachedfkeys
-				|
-				-- hap_init_propagation_path_search
-				|
-				-- hap_try_set_propagate_paths
-				|
-				-- hap_recurse_fkey_to_find_implicit_paths
+-- foreach PlannerInfo->simple_rel_array (all tables in the query)
+    |
+    -- if the relation is not a HAP table, continue
+    |
+    -- hap_find_propagation_paths_for_rel (for a specific descendant table)
+        |
+        -- cachedfkeys = RelationGetFKeyList /* Gets FKs where the current table is the child */
+        |
+        -- foreach cachedfkeys
+            |
+            -- hap_init_propagatation_path_search /* Initializes path/condition with direct parent */
+            |
+            -- hap_try_set_propagate_paths /* Checks if direct parent is in the query and sets path */
+            |
+            -- hap_recurse_fkey_to_find_implicit_paths /* Recursively finds paths to higher ancestors */
+                |
+                -- cachedfkeys = RelationGetFKeyList /* Gets FKs for the parent table */
+                |
+                -- foreach cachedfkey
+                    |
+                    -- hap_rebuild_propagate_cond /* Checks if new FK is a subset of the current path's keys */
+                    |
+                    -- if it is a valid extension of the path
+                        |
+                        -- hap_redirect_propagate_path /* Updates path to include the new ancestor */
+                        |
+                        -- hap_try_set_propagate_paths /* Checks if this new ancestor is in the query */
+                        |
+                        -- hap_recurse_fkey_to_find_implicit_paths /* Continues climbing up */
 ```
-In hap_propagate_hidden_attribute, hap_find_propagation_paths is called to determine the propagation path of hidden attribute predicates. It iterates through all tables in the query, and if a table is an HAP table, it populates the HapPropagateCond and HapPropagatePath data structures for foreign key constraints where the table is a child. The propagation path is traced from the descendant table back to the ancestor table in the hap_find_propagation_paths_for_rel (cachedfkeys contains foreign keys where the target relation is the child table).
+The process starts with `hap_find_propagation_paths()`, which iterates through every base relation involved in the query. For each HAP table, it calls `hap_find_propagation_paths_for_rel()` to find paths leading to that table. This function retrieves all foreign key constraints where the current table is the child (`conrelid`).
+
+For each foreign key, a potential propagation path is initiated. `hap_init_propagatation_path_search()` creates the initial `HapPropagatePath` and `HapPropagateCond` structures, representing the direct link from the child to its parent. `hap_try_set_propagate_paths()` then checks if this parent table is actually part of the current query and if the join condition (`eclass`) between them is valid. If so, a valid path is found and stored in the parent's `RelOptInfo`.
+
+The real power lies in `hap_recurse_fkey_to_find_implicit_paths()`. This function allows HAP to find multi-level propagation paths (e.g., from a grandparent table). It takes the current path, moves up to the parent table, and inspects its foreign key constraints. For each new potential ancestor, `hap_rebuild_propagate_cond()` performs a critical check: it verifies that the foreign key columns connecting the parent and grandparent are a subset of the foreign key columns that connect the child and parent. This ensures the integrity of the propagation. If the path is valid, it's extended, and the recursion continues, effectively "climbing" the chain of foreign keys until no more valid ancestors can be found in the query.
+
+### 2. Transforming and Propagating Filter Predicates (`hap_propagate_filter_predicates`)
+
+After all possible paths have been mapped, this stage transforms the actual predicates on dimension tables into hidden attribute predicates and pushes them down to the fact tables.
 
 ```
-/*
- * HapPropagatePath - The path of hidden attribute propagation.
- *
- * - rel_oid_list: Relation oids passed through in the propagation.
- * - target_rel_idx: Target RelOptInfo index to be propagated to.
- */
-typedef struct HapPropagatePath
-{
-	List *rel_oid_list;
-	Index target_rel_idx;
-} HapPropagatePath;
-
-/*
- * HapPropagateCond - Condition to determine whether or not to propagate.
- *
- * - ancestor_key: Foreign key attributes of propagating relation.
- * - descendant_key: Foreign key attributes of target relation.
- * - valid_keys: Bitmap indicating valid attributes in the key arrays.
- * - nkeys: Size of the key arrays.
- */
-typedef struct HapPropagateCond
-{
-	AttrNumber ancestor_key[INDEX_MAX_KEYS];
-	AttrNumber descendant_key[INDEX_MAX_KEYS];
-	Bitmapset *valid_keys;
-	int nkeys;
-} HapPropagateCond;
+hap_propagate_filter_predicates
+|
+-- hap_create_and_propagate_hidden_attribute_exprs
+|  |
+|  -- foreach simple_rel_array (dimension tables with propagation paths)
+|     |
+|     -- foreach baserestrictinfo (predicates on the dimension table)
+|        |
+|        -- hap_create_hidden_attribute_expr
+|        |  |
+|        |  -- hap_get_hidden_attribute_encoding_values
+|        |  |  |
+|        |  |  -- hap_make_encoding_table_seqscan_plan
+|        |  |  |
+|        |  |  -- Execute lightweight plan to get encoded value(s)
+|        |  |
+|        |  -- return HapHiddenAttrOpExpr/ScalarArrayOpExpr/BoolExpr
+|        |
+|        -- if new expression is created
+|           |
+|           -- hap_propagate_hidden_attribute_expr (start propagation)
+|              |
+|              -- foreach path
+|                 |
+|                 -- hap_transform_hidden_attribute_expr
+|                 |  |
+|                 |  -- HapGetDescendantHiddenAttrDescid
+|                 |  |
+|                 |  -- Returns a *new* expression tailored for the descendant
+|                 |
+|                 -- Add new expression to descendant's RelOptInfo
+|                 |
+|                 -- hap_propagate_hidden_attribute_expr /* Recursive call for multi-level paths */
+|
+-- hap_make_restrictinfos_from_hidden_attribute_exprs
+   |
+   -- foreach simple_rel_array (all tables)
+      |
+      -- foreach hap_propagated_exprs
+         |
+         -- make_restrictinfo /* Convert the expression into a planner-usable format */
+         |
+         -- Add the new RestrictInfo to baserestrictinfo list of the table
 ```
 
-# Partition map
+This process is kicked off by `hap_create_and_propagate_hidden_attribute_exprs()`. It scans dimension tables that have both outgoing propagation paths and predicates. For each such predicate (e.g., r_name = 'ASIA'), `hap_create_hidden_attribute_expr()` is called. This function's job is to convert the predicate into its hidden attribute equivalent. It does this by calling `hap_get_hidden_attribute_encoding_values()`, which builds and executes a lightweight scan plan on the fly against the corresponding `encoding table` (the materialized view created by `hap_encode`). This scan retrieves the integer ID(s) for the literal value ('ASIA'). Based on these IDs, a new expression node (like `HapHiddenAttrOpExpr`) is constructed, representing a filter on the `_hap_hidden_attribute` column.
+
+Once this new hidden attribute expression is created, it's passed to `hap_propagate_hidden_attribute_expr()`. This function takes the expression and the list of propagation paths found in the previous stage. For each path leading to a descendant, it calls `hap_transform_hidden_attribute_expr()`. This is a crucial step that adapts the expression for the target table. It uses `HapGetDescendantHiddenAttrDescid` to look up the specific metadata (start bit, bit size) for that attribute within the descendant's hidden attribute layout and creates a new, copied expression with the updated parameters. This new expression is then added to the descendant table's `hap_propagated_exprs` list. The function then calls itself recursively to continue propagation down multi-level paths.
+
+Finally, after all expressions have been propagated throughout the query tree, `hap_make_restrictinfos_from_hidden_attribute_exprs()` is called. It iterates through all tables, finds the `hap_propagated_exprs` lists, and converts each expression into a standard `RestrictInfo` structure. This makes the new hidden attribute predicate a first-class citizen in the PostgreSQL planner, which will now use it to filter rows at the table scan level, long before any joins are performed.
