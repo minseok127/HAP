@@ -365,7 +365,7 @@ Since the user does not explicitly specify hidden attribute values in the insert
 
 # Predicate Transformation and Propagation
 
-To transform predicates on ancestor tables into predicates on hidden attributes of descendant tables, a `HAP_HOOK` is used for the `query_planner()`. If the query is a SELECT and `enable_hap_planner` is ON, HAP's logic is applied. The `enable_hap_planner` setting can be toggled using SET and defaults to true.
+To transform predicates on ancestor tables into predicates on hidden attributes of descendant tables, a `HAP_HOOK` is used for the `query_planner()`. If the query is a `SELECT` and `enable_hap_planner` is ON, HAP's logic is applied. The `enable_hap_planner` setting can be toggled using `SET` and defaults to `true`.
 
 ```
 > SET enable_hap_planner = on;
