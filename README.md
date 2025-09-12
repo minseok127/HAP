@@ -1,3 +1,5 @@
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/minseok127/HAP)
+
 # HAP
 
 This repository archives the HAP, a submodule extracted from the TRACER-ETL project. The module is located in `src/backend/hap`, and modifications to existing PostgreSQL functions are marked with the `HAP_HOOK` keyword and `#ifdef HAP`. The name HAP is an abbreviation of Hidden Attribute Partitioning, but partitioning is not enforced. In fact, partitioning is handled by TRACER's logic, not HAP.
